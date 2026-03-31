@@ -8,6 +8,8 @@
 #include <ento-mcu/systick_config.h>
 
 #include "kernels_inline.h"
+#include "kernels_v2_inline.h"
+#include "kernels_fetch_char.h"
 
 #define XSTR(x) #x
 #define STR(x) XSTR(x)

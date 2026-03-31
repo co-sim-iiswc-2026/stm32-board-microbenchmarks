@@ -82,6 +82,56 @@ BENCHMARKS=(
     bench-bp_alternating
     bench-bp_nested
     bench-bp_align
+    # V2 variants (original register usage)
+    bench-alu_v2
+    bench-alu16_v2
+    bench-pushpop_v2
+    bench-mixed_width_v2
+    bench-bp_forward_v2
+    bench-bp_nested_v2
+    # Fetch characterization
+    bench-fetch_nop16_8
+    bench-fetch_nop16_16
+    bench-fetch_nop16_32
+    bench-fetch_nop16_64
+    bench-fetch_nop16_128
+    bench-fetch_nop16_256
+    bench-fetch_nop32_8
+    bench-fetch_nop32_16
+    bench-fetch_nop32_32
+    bench-fetch_nop32_64
+    bench-fetch_nop32_128
+    bench-fetch_ws_validate
+    # Branch distance
+    bench-br_back_0
+    bench-br_back_1
+    bench-br_back_2
+    bench-br_back_4
+    bench-br_back_8
+    bench-br_back_16
+    bench-br_back_32
+    bench-br_back_64
+    bench-br_fwd_0
+    bench-br_fwd_2
+    bench-br_fwd_4
+    bench-br_fwd_8
+    bench-br_fwd_16
+    bench-br_fwd_32
+    bench-br_nottaken
+    # Fetch pipeline
+    bench-fetch_seq_4
+    bench-fetch_seq_8
+    bench-fetch_seq_16
+    bench-fetch_seq_32
+    bench-fetch_interleave_mul
+    bench-fetch_interleave_div
+    # ART cache capacity
+    bench-art_cap_32
+    bench-art_cap_64
+    bench-art_cap_128
+    bench-art_cap_256
+    bench-art_cap_512
+    bench-art_cap_1024
 )
 
 flash_and_log() {

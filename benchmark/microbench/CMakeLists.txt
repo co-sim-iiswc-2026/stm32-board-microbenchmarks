@@ -75,6 +75,64 @@ set(MICROBENCHMARKS
     bp_align
 )
 
+# V2 variants: match original src/*.S register usage (independent destinations,
+# original register choices). Only benchmarks that differ from v1 are included.
+set(MICROBENCHMARKS_V2
+    alu_v2
+    alu16_v2
+    pushpop_v2
+    mixed_width_v2
+    bp_forward_v2
+    bp_nested_v2
+)
+
+# Fetch characterization benchmarks
+set(MICROBENCHMARKS_FETCH
+    # Group 1: Flash fetch baseline
+    fetch_nop16_8
+    fetch_nop16_16
+    fetch_nop16_32
+    fetch_nop16_64
+    fetch_nop16_128
+    fetch_nop16_256
+    fetch_nop32_8
+    fetch_nop32_16
+    fetch_nop32_32
+    fetch_nop32_64
+    fetch_nop32_128
+    fetch_ws_validate
+    # Group 2: Branch distance
+    br_back_0
+    br_back_1
+    br_back_2
+    br_back_4
+    br_back_8
+    br_back_16
+    br_back_32
+    br_back_64
+    br_fwd_0
+    br_fwd_2
+    br_fwd_4
+    br_fwd_8
+    br_fwd_16
+    br_fwd_32
+    br_nottaken
+    # Group 3: Fetch pipeline
+    fetch_seq_4
+    fetch_seq_8
+    fetch_seq_16
+    fetch_seq_32
+    fetch_interleave_mul
+    fetch_interleave_div
+    # Group 4: ART cache capacity
+    art_cap_32
+    art_cap_64
+    art_cap_128
+    art_cap_256
+    art_cap_512
+    art_cap_1024
+)
+
 # Track all targets for group operations
 set(BENCH_TARGETS)
 
@@ -101,6 +159,49 @@ foreach(bench ${MICROBENCHMARKS})
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    list(APPEND BENCH_TARGETS ${TARGET_NAME})
+endforeach()
+
+# V2 benchmarks (match original src/*.S register usage and encodings)
+foreach(bench ${MICROBENCHMARKS_V2})
+    set(TARGET_NAME bench-${bench})
+
+    add_benchmark(${TARGET_NAME}
+      SOURCES microbench_main.cc
+      LIBRARIES ${MODULES}
+    )
+
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+      KERNEL_FN=bench_${bench}_kernel
+      KERNEL_NAME=bench_${bench}
+    )
+
+    target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN_DIR})
+
+    list(APPEND BENCH_TARGETS ${TARGET_NAME})
+endforeach()
+
+# Fetch characterization benchmarks
+foreach(bench ${MICROBENCHMARKS_FETCH})
+    set(TARGET_NAME bench-${bench})
+
+    set(EXTRA_SOURCES "")
+    if(bench STREQUAL "art_cap_1024")
+      set(EXTRA_SOURCES kernel_art_cap_1024.S)
+    endif()
+
+    add_benchmark(${TARGET_NAME}
+      SOURCES microbench_main.cc ${EXTRA_SOURCES}
+      LIBRARIES ${MODULES}
+    )
+
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+      KERNEL_FN=bench_${bench}_kernel
+      KERNEL_NAME=bench_${bench}
+    )
+
+    target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN_DIR})
 
     list(APPEND BENCH_TARGETS ${TARGET_NAME})
 endforeach()

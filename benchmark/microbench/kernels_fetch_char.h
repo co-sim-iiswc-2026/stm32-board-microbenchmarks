@@ -1,0 +1,376 @@
+#ifndef KERNELS_FETCH_CHAR_H
+#define KERNELS_FETCH_CHAR_H
+
+// Fetch characterization benchmarks for STM32G474RE ART accelerator.
+// Designed to isolate flash fetch behavior, branch taken cost,
+// prefetch buffer depth, and ART cache capacity.
+
+#define KERNEL_FC_INLINE static inline void __attribute__((always_inline))
+
+// =========================================================================
+// Group 1: Flash Fetch Baseline & Wait State Validation
+// =========================================================================
+
+// Straight-line 16-bit NOPs — varying length
+KERNEL_FC_INLINE bench_fetch_nop16_8_kernel() {
+    asm volatile(".rept 8  \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop16_16_kernel() {
+    asm volatile(".rept 16 \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop16_32_kernel() {
+    asm volatile(".rept 32 \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop16_64_kernel() {
+    asm volatile(".rept 64 \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop16_128_kernel() {
+    asm volatile(".rept 128 \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop16_256_kernel() {
+    asm volatile(".rept 256 \n nop \n .endr" ::: "memory");
+}
+
+// Straight-line 32-bit instructions — varying length
+// add.w r0, r0, #0 is a 32-bit NOP-equivalent (no side effects except flags)
+KERNEL_FC_INLINE bench_fetch_nop32_8_kernel() {
+    asm volatile(".rept 8   \n add.w r0, r0, #0 \n .endr" ::: "r0", "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop32_16_kernel() {
+    asm volatile(".rept 16  \n add.w r0, r0, #0 \n .endr" ::: "r0", "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop32_32_kernel() {
+    asm volatile(".rept 32  \n add.w r0, r0, #0 \n .endr" ::: "r0", "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop32_64_kernel() {
+    asm volatile(".rept 64  \n add.w r0, r0, #0 \n .endr" ::: "r0", "memory");
+}
+KERNEL_FC_INLINE bench_fetch_nop32_128_kernel() {
+    asm volatile(".rept 128 \n add.w r0, r0, #0 \n .endr" ::: "r0", "memory");
+}
+
+// Clock/counter validation: tight cached loop, known cycle count
+// 100 × (subs + bne) = 100 × 3 = 300 cycles with cache ON
+KERNEL_FC_INLINE bench_fetch_ws_validate_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+// =========================================================================
+// Group 2: Branch Taken Fetch Cost
+// =========================================================================
+
+// Backward branch with varying body size: N NOPs + subs + bne
+// Measures how branch distance affects refetch cost
+
+KERNEL_FC_INLINE bench_br_back_0_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_1_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        "nop                 \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_2_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 2 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_4_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 4 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_8_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 8 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_16_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 16 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_32_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 32 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_back_64_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "1:                  \n"
+        ".rept 64 \n nop \n .endr \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "memory"
+    );
+}
+
+// Forward branch with varying skip distance
+// 100 iterations: cmp r1,r1 + beq(fwd, skip N nops) + N nops + subs + bne(back)
+
+KERNEL_FC_INLINE bench_br_fwd_0_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_fwd_2_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        ".rept 2 \n nop \n .endr \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_fwd_4_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        ".rept 4 \n nop \n .endr \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_fwd_8_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        ".rept 8 \n nop \n .endr \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_fwd_16_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        ".rept 16 \n nop \n .endr \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_br_fwd_32_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, r1          \n"
+        "beq 2f              \n"
+        ".rept 32 \n nop \n .endr \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+// Not-taken branch baseline
+// 100 iterations: cmp + bne(never taken) + nop + subs + bne(back)
+KERNEL_FC_INLINE bench_br_nottaken_kernel() {
+    asm volatile(
+        "mov r0, #100        \n"
+        "mov r1, #0          \n"
+        "1:                  \n"
+        "cmp r1, #1          \n"
+        "bne 2f              \n"
+        "nop                 \n"
+        "2:                  \n"
+        "subs r0, r0, #1    \n"
+        "bne 1b              \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+// =========================================================================
+// Group 3: Fetch Pipeline / Prefetch Buffer
+// =========================================================================
+
+// Sequential code crossing cache line boundaries (8-byte aligned)
+KERNEL_FC_INLINE bench_fetch_seq_4_kernel() {
+    asm volatile(".balign 8 \n .rept 4  \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_seq_8_kernel() {
+    asm volatile(".balign 8 \n .rept 8  \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_seq_16_kernel() {
+    asm volatile(".balign 8 \n .rept 16 \n nop \n .endr" ::: "memory");
+}
+KERNEL_FC_INLINE bench_fetch_seq_32_kernel() {
+    asm volatile(".balign 8 \n .rept 32 \n nop \n .endr" ::: "memory");
+}
+
+// Interleave multi-cycle ops with NOPs to test prefetch overlap
+// Pattern A: mul.w (1-cycle on M4) + 3 NOPs, repeated 25 times = 100 instructions
+KERNEL_FC_INLINE bench_fetch_interleave_mul_kernel() {
+    asm volatile(
+        "mov r0, #7          \n"
+        "mov r1, #13         \n"
+        ".rept 25            \n"
+        "mul.w r2, r0, r1   \n"
+        "nop                 \n"
+        "nop                 \n"
+        "nop                 \n"
+        ".endr               \n"
+        ::: "r0", "r1", "r2", "memory"
+    );
+}
+
+// Pattern B: sdiv (multi-cycle) + NOPs — div gives prefetcher more time
+KERNEL_FC_INLINE bench_fetch_interleave_div_kernel() {
+    asm volatile(
+        "mov r0, #15         \n"
+        "mov r1, #3          \n"
+        ".rept 20            \n"
+        "sdiv r2, r0, r1    \n"
+        "nop                 \n"
+        "nop                 \n"
+        "nop                 \n"
+        "nop                 \n"
+        ".endr               \n"
+        ::: "r0", "r1", "r2", "memory"
+    );
+}
+
+// =========================================================================
+// Group 4: ART Cache Capacity
+// =========================================================================
+
+// Loop bodies of increasing size to find ART cache capacity transition
+// N NOPs + subs + bne, 100 iterations each
+
+KERNEL_FC_INLINE bench_art_cap_32_kernel() {
+    asm volatile(
+        "mov r0, #100 \n 1: \n"
+        ".rept 32 \n nop \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap_64_kernel() {
+    asm volatile(
+        "mov r0, #100 \n 1: \n"
+        ".rept 64 \n nop \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap_128_kernel() {
+    asm volatile(
+        "mov r0, #100 \n 1: \n"
+        ".rept 128 \n nop \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap_256_kernel() {
+    asm volatile(
+        "mov r0, #100 \n 1: \n"
+        ".rept 256 \n nop \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap_512_kernel() {
+    asm volatile(
+        "mov r0, #100 \n 1: \n"
+        ".rept 512 \n nop \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "memory"
+    );
+}
+
+// Too large for inline asm. Defined in kernel_art_cap_1024.S.
+extern "C" void bench_art_cap_1024_asm(void);
+KERNEL_FC_INLINE bench_art_cap_1024_kernel() {
+    bench_art_cap_1024_asm();
+}
+
+#undef KERNEL_FC_INLINE
+#endif // KERNELS_FETCH_CHAR_H
