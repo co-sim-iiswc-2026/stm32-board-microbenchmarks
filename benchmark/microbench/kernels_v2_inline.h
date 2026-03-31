@@ -24,6 +24,7 @@
 //     in unified syntax — matching original encoding
 KERNEL_V2_INLINE bench_alu_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         ".rept 25            \n"
         "add   r4, r0, r1   \n"
         "sub   r5, r2, r3   \n"
@@ -38,6 +39,7 @@ KERNEL_V2_INLINE bench_alu_v2_kernel() {
 // v2: writes to r4/r5 (independent, matches original)
 KERNEL_V2_INLINE bench_alu16_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         ".rept 25            \n"
         "adds r4, r0, r1    \n"
         "subs r5, r2, r3    \n"
@@ -53,6 +55,7 @@ KERNEL_V2_INLINE bench_alu16_v2_kernel() {
 //     matches original between BENCH_START and BENCH_END
 KERNEL_V2_INLINE bench_pushpop_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         "mov r0, #0          \n"
         "mov r1, #1          \n"
         "mov r2, #2          \n"
@@ -71,6 +74,7 @@ KERNEL_V2_INLINE bench_pushpop_v2_kernel() {
 // v2: writes to r4/r5 (independent, matches original)
 KERNEL_V2_INLINE bench_mixed_width_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         ".rept 25            \n"
         "nop                 \n"
         "and.w r4, r0, r2   \n"
@@ -88,6 +92,7 @@ KERNEL_V2_INLINE bench_mixed_width_v2_kernel() {
 // v1: r0/r1; v2: r4/r5 (matches original)
 KERNEL_V2_INLINE bench_bp_forward_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         "mov r4, #0          \n"
         "mov r5, #100        \n"
         "1:                  \n"
@@ -105,6 +110,7 @@ KERNEL_V2_INLINE bench_bp_forward_v2_kernel() {
 // v1: r0/r1; v2: r4/r5 (matches original)
 KERNEL_V2_INLINE bench_bp_nested_v2_kernel() {
     asm volatile(
+        ".balign 16          \n"
         "mov r4, #20         \n"
         "1:                  \n"
         "mov r5, #10         \n"

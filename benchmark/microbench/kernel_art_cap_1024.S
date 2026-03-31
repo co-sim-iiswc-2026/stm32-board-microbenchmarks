@@ -5,6 +5,7 @@
     .thumb_func
     .type bench_art_cap_1024_asm, %function
 bench_art_cap_1024_asm:
+    .balign 16
     mov r0, #100
 1:
     .rept 1024
