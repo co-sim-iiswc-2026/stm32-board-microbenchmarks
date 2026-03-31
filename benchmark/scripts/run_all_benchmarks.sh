@@ -1,18 +1,25 @@
 #!/bin/bash
-# Run all microbenchmarks on STM32G474RE with 4 cache/prefetch configurations.
+# Run all microbenchmarks on STM32G474RE.
 #
 # Usage:
-#   ./benchmark/scripts/run_all_benchmarks.sh                # build + flash all 4 configs
-#   ./benchmark/scripts/run_all_benchmarks.sh --skip-build   # flash only
-#   ./benchmark/scripts/run_all_benchmarks.sh --config cache_pf  # run one config only
+#   ./benchmark/scripts/run_all_benchmarks.sh                    # all 4 configs, dual bank
+#   ./benchmark/scripts/run_all_benchmarks.sh --skip-build       # flash only
+#   ./benchmark/scripts/run_all_benchmarks.sh --config cache_pf  # single config
+#   ./benchmark/scripts/run_all_benchmarks.sh --bank both        # dual + single bank
+#   ./benchmark/scripts/run_all_benchmarks.sh --bank single      # single bank only
 #
-# Configurations:
-#   cache_pf    - cache ON,  prefetch ON
-#   cache_nopf  - cache ON,  prefetch OFF
-#   nocache_pf  - cache OFF, prefetch ON
-#   nocache_nopf- cache OFF, prefetch OFF
+# Configurations (compile-time, cache/prefetch):
+#   cache_pf     - cache ON,  prefetch ON
+#   cache_nopf   - cache ON,  prefetch OFF
+#   nocache_pf   - cache OFF, prefetch ON
+#   nocache_nopf - cache OFF, prefetch OFF
 #
-# Output: benchmark_logs/<config>/<name>.log
+# Bank modes (hardware, set via OpenOCD option bytes):
+#   dual   - 64-bit fetch (default)
+#   single - 128-bit fetch
+#   both   - run dual then single
+#
+# Output: benchmark_logs/<config>[_singlebank]/<name>.log
 #         benchmark_logs/flash_sizes.txt
 
 set -euo pipefail
@@ -20,17 +27,18 @@ cd "$(dirname "$0")/../.."
 
 SKIP_BUILD=0
 RUN_CONFIGS=()
+BANK_MODE="dual"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-build)   SKIP_BUILD=1 ;;
         --config)       RUN_CONFIGS+=("$2"); shift ;;
+        --bank)         BANK_MODE="$2"; shift ;;
         *) echo "Unknown arg: $1"; exit 1 ;;
     esac
     shift
 done
 
-# Default: run all 4
 if [[ ${#RUN_CONFIGS[@]} -eq 0 ]]; then
     RUN_CONFIGS=(cache_pf cache_nopf nocache_pf nocache_nopf)
 fi
@@ -39,7 +47,6 @@ BUILD_DIR="build-entobench"
 LOG_DIR="benchmark_logs"
 PRESET="stm32-g474re"
 
-# Map config name -> JSON file
 config_json_for() {
     case "$1" in
         cache_pf)      echo "configs/microbench.json" ;;
@@ -82,7 +89,7 @@ BENCHMARKS=(
     bench-bp_alternating
     bench-bp_nested
     bench-bp_align
-    # V2 variants (original register usage)
+    # V2 variants
     bench-alu_v2
     bench-alu16_v2
     bench-pushpop_v2
@@ -102,7 +109,6 @@ BENCHMARKS=(
     bench-fetch_nop32_64
     bench-fetch_nop32_128
     bench-fetch_ws_validate
-    # Branch distance
     bench-br_back_0
     bench-br_back_1
     bench-br_back_2
@@ -118,14 +124,12 @@ BENCHMARKS=(
     bench-br_fwd_16
     bench-br_fwd_32
     bench-br_nottaken
-    # Fetch pipeline
     bench-fetch_seq_4
     bench-fetch_seq_8
     bench-fetch_seq_16
     bench-fetch_seq_32
     bench-fetch_interleave_mul
     bench-fetch_interleave_div
-    # ART cache capacity
     bench-art_cap_32
     bench-art_cap_64
     bench-art_cap_128
@@ -134,19 +138,28 @@ BENCHMARKS=(
     bench-art_cap_1024
 )
 
+set_bank_mode() {
+    local mode="$1"
+    echo ""
+    echo "============================================"
+    echo "  Setting flash bank mode: $mode"
+    echo "============================================"
+    if [[ "$mode" == "single" ]]; then
+        make -C "$BUILD_DIR" stm32-flash-bank-single 2>&1 | grep -E "flash mode|written|load"
+    elif [[ "$mode" == "dual" ]]; then
+        make -C "$BUILD_DIR" stm32-flash-bank-dual 2>&1 | grep -E "flash mode|written|load"
+    fi
+    sleep 2
+    echo "  Verifying..."
+    make -C "$BUILD_DIR" stm32-flash-bank-read 2>&1 | grep "flash mode"
+}
+
 flash_and_log() {
     local target="$1"
     local log="$2"
     local label="$3"
-
-    echo ""
-    echo "=========================================="
     echo "  Flashing: $label"
-    echo "  Log:      $log"
-    echo "=========================================="
-    echo ""
-
-    make -C "$BUILD_DIR" "stm32-flash-${target}-semihosted" 2>&1 | tee "$log"
+    make -C "$BUILD_DIR" "stm32-flash-${target}-semihosted" 2>&1 | tee "$log" | grep -E "Average cycles:" | head -1
 }
 
 record_sizes() {
@@ -173,12 +186,11 @@ run_config() {
     echo "  Configuration: $config_name"
     echo "  Config file:   $config_json"
     echo "############################################"
-    echo ""
 
     if [[ $SKIP_BUILD -eq 0 ]]; then
         echo "[build] Configuring with $config_json"
         cmake --preset "$PRESET" -S benchmark \
-            -DMICROBENCH_CONFIG_FILE="$config_json"
+            -DMICROBENCH_CONFIG_FILE="$config_json" 2>&1 | tail -1
 
         echo "[build] Building all benchmarks"
         for bench in "${BENCHMARKS[@]}"; do
@@ -193,22 +205,52 @@ run_config() {
     done
 }
 
-# Clear previous logs
+run_all_configs_for_bank() {
+    local bank_suffix="$1"  # "" or "_singlebank"
+
+    for cfg in "${RUN_CONFIGS[@]}"; do
+        json=$(config_json_for "$cfg")
+        if [[ -z "$json" ]]; then
+            echo "Unknown config: $cfg"
+            exit 1
+        fi
+        run_config "$json" "${cfg}${bank_suffix}"
+    done
+}
+
+# =============================================================================
+# Main
+# =============================================================================
 mkdir -p "$LOG_DIR"
 > "$LOG_DIR/flash_sizes.txt"
 
-for cfg in "${RUN_CONFIGS[@]}"; do
-    json=$(config_json_for "$cfg")
-    if [[ -z "$json" ]]; then
-        echo "Unknown config: $cfg"
+case "$BANK_MODE" in
+    dual)
+        set_bank_mode dual
+        run_all_configs_for_bank ""
+        ;;
+    single)
+        set_bank_mode single
+        run_all_configs_for_bank "_singlebank"
+        set_bank_mode dual
+        ;;
+    both)
+        set_bank_mode dual
+        run_all_configs_for_bank ""
+        set_bank_mode single
+        run_all_configs_for_bank "_singlebank"
+        set_bank_mode dual
+        ;;
+    *)
+        echo "Unknown bank mode: $BANK_MODE (use dual, single, or both)"
         exit 1
-    fi
-    run_config "$json" "$cfg"
-done
+        ;;
+esac
 
 echo ""
 echo "=========================================="
 echo "  All benchmarks complete."
+echo "  Bank: $BANK_MODE"
 echo "  Configs: ${RUN_CONFIGS[*]}"
 echo "  Logs:    $LOG_DIR/<config>/*.log"
 echo "  Sizes:   $LOG_DIR/flash_sizes.txt"
