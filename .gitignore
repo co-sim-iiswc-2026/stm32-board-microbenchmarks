@@ -1,2 +1,5 @@
 build-entobench/
 benchmark_logs/
+benchmark_logs_*/
+benchmark/configs/_tmp_*
+benchmark/entobench_helpers.cmake
