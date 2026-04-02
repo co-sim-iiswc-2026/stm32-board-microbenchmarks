@@ -395,5 +395,133 @@ KERNEL_FC_INLINE bench_art_cap_1024_kernel() {
     bench_art_cap_1024_asm();
 }
 
+// =========================================================================
+// Group 4b: ART Cache Capacity — 32-bit instructions
+// =========================================================================
+
+// Same structure as 16-bit art_cap but using add.w r0, r0, #0 (32-bit NOP)
+// N 32-bit instructions + subs + bne, 100 iterations
+
+KERNEL_FC_INLINE bench_art_cap32_64_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 64 \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap32_128_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 128 \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_cap32_256_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 256 \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+// =========================================================================
+// Group 4c: ART Cache Capacity — Mixed width (alternating 16+32)
+// =========================================================================
+
+// Alternating nop (16-bit) + add.w (32-bit) = 6 bytes per pair
+// N pairs = N*2 instructions, 100 iterations
+
+KERNEL_FC_INLINE bench_art_capmix_32_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 32 \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_capmix_64_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 64 \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_capmix_128_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 128 \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_capmix_256_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 256 \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+// =========================================================================
+// Group 4d: ART Cache Capacity — Different mix ratios
+// =========================================================================
+// Naming: art_mix<16count>x<32count>_<total_pairs>
+// Bytes per pair shown in comments
+
+// 3:1 ratio — three 16-bit + one 32-bit = 10 bytes per 4 instructions (2.5 bytes/instr)
+KERNEL_FC_INLINE bench_art_mix3x1_64_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 64 \n nop \n nop \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+KERNEL_FC_INLINE bench_art_mix3x1_128_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 128 \n nop \n nop \n nop \n add.w r1, r1, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "memory"
+    );
+}
+
+// 1:3 ratio — one 16-bit + three 32-bit = 14 bytes per 4 instructions (3.5 bytes/instr)
+KERNEL_FC_INLINE bench_art_mix1x3_64_kernel() {
+    asm volatile(
+        ".balign 16          \n"
+        "mov r0, #100 \n 1: \n"
+        ".rept 64 \n nop \n add.w r1, r1, #0 \n add.w r2, r2, #0 \n add.w r3, r3, #0 \n .endr \n"
+        "subs r0, r0, #1 \n bne 1b \n"
+        ::: "r0", "r1", "r2", "r3", "memory"
+    );
+}
+
+// Too large for inline asm. Defined in kernel_art_mix1x3_128.S.
+extern "C" void bench_art_mix1x3_128_asm(void);
+KERNEL_FC_INLINE bench_art_mix1x3_128_kernel() {
+    bench_art_mix1x3_128_asm();
+}
+
 #undef KERNEL_FC_INLINE
 #endif // KERNELS_FETCH_CHAR_H

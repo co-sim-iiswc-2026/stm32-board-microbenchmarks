@@ -131,6 +131,20 @@ set(MICROBENCHMARKS_FETCH
     art_cap_256
     art_cap_512
     art_cap_1024
+    # Group 4b: ART cache capacity — 32-bit
+    art_cap32_64
+    art_cap32_128
+    art_cap32_256
+    # Group 4c: ART cache capacity — mixed width
+    art_capmix_32
+    art_capmix_64
+    art_capmix_128
+    art_capmix_256
+    # Group 4d: ART cache capacity — different mix ratios
+    art_mix3x1_64
+    art_mix3x1_128
+    art_mix1x3_64
+    art_mix1x3_128
 )
 
 # Track all targets for group operations
@@ -189,6 +203,8 @@ foreach(bench ${MICROBENCHMARKS_FETCH})
     set(EXTRA_SOURCES "")
     if(bench STREQUAL "art_cap_1024")
       set(EXTRA_SOURCES kernel_art_cap_1024.S)
+    elseif(bench STREQUAL "art_mix1x3_128")
+      set(EXTRA_SOURCES kernel_art_mix1x3_128.S)
     endif()
 
     add_benchmark(${TARGET_NAME}
