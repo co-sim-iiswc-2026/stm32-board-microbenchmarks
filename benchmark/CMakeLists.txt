@@ -34,7 +34,8 @@ add_compile_options(-w)
 # and fetches CMSIS/HAL sources when FETCH_ST_SOURCES=ON.
 
 add_definitions(-DSTM32_BUILD=1)
-add_definitions(-DDATASET_PATH="${ENTOBENCH_DIR}/datasets")
+get_filename_component(DATASETS_ABS "${CMAKE_CURRENT_SOURCE_DIR}/../datasets" ABSOLUTE)
+add_definitions(-DDATASET_PATH="${DATASETS_ABS}")
 
 # CMSIS/HAL target variables (non-H7 path)
 set(CMSIS_FAMILY_TARGET "CMSIS::STM32::${STM_FAMILY}")
