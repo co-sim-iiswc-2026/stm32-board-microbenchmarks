@@ -3,8 +3,9 @@
     "reps": 1,
     "inner_reps": 1,
     "verbosity": 1,
-    "enable_caches": true,
-    "max_problems": 10
+    "enable_caches": false,
+    "max_problems": 10,
+    "enable_prefetch": false
   },
   "targets": {
     "bench-adaptive-controller-float": {
@@ -110,6 +111,8 @@
       "enable_caches": true,
       "max_problems": 20,
       "description": "TinyMPC horizon length comparison benchmark"
-    }
+    },
+    "enable_caches": false,
+    "enable_prefetch": false
   }
-} 
+}

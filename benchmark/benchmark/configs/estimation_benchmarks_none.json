@@ -3,22 +3,25 @@
     "reps": 1,
     "inner_reps": 1,
     "verbosity": 2,
-    "enable_caches": true,
-    "max_problems": 100
+    "enable_caches": false,
+    "max_problems": 100,
+    "enable_prefetch": false
   },
   "pose-est": {
     "reps": 1,
     "inner_reps": 1,
     "verbosity": 1,
-    "enable_caches": true,
-    "max_problems": 100
+    "enable_caches": false,
+    "max_problems": 100,
+    "enable_prefetch": false
   },
   "ekf": {
     "reps": 1,
     "inner_reps": 2,
     "verbosity": 1,
-    "enable_caches": true,
-    "max_problems": 10
+    "enable_caches": false,
+    "max_problems": 10,
+    "enable_prefetch": false
   },
   "targets": {
     "bench-madgwick-float-imu": {
@@ -28,7 +31,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-madgwick-float-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -36,7 +38,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-madgwick-double-imu": {
       "reps": 1,
       "inner_reps": 1,
@@ -44,7 +45,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-madgwick-double-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -52,7 +52,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-madgwick-q7-24-imu": {
       "reps": 1,
       "inner_reps": 1,
@@ -60,7 +59,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-madgwick-q7-24-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -68,7 +66,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-float-imu": {
       "reps": 1,
       "inner_reps": 1,
@@ -76,7 +73,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-float-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -84,7 +80,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-double-imu": {
       "reps": 1,
       "inner_reps": 1,
@@ -92,7 +87,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-double-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -100,7 +94,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-q7-24-imu": {
       "reps": 1,
       "inner_reps": 1,
@@ -108,7 +101,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-mahony-q7-24-marg": {
       "reps": 1,
       "inner_reps": 10,
@@ -116,7 +108,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-fourati-float-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -124,7 +115,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-fourati-double-marg": {
       "reps": 1,
       "inner_reps": 1,
@@ -132,7 +122,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-fourati-q7-24-marg": {
       "reps": 1,
       "inner_reps": 200,
@@ -140,7 +129,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-p3p-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -148,7 +136,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-p3p-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -156,7 +143,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-up2p-float": {
       "reps": 1,
       "inner_reps": 250,
@@ -164,7 +150,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-up2p-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -172,7 +157,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -180,7 +164,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -188,7 +171,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt8-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -196,7 +178,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt16-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -204,7 +185,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt16-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -212,7 +192,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt32-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -220,7 +199,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt32-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -228,7 +206,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt64-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -236,7 +213,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-dlt64-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -244,7 +220,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -252,7 +227,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -260,7 +234,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt16-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -268,7 +241,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt16-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -276,7 +248,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt32-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -284,7 +255,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt32-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -292,7 +262,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt64-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -300,7 +269,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-8pt64-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -308,7 +276,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-5pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -316,7 +283,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-5pt-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -324,7 +290,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-3pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -332,7 +297,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-3pt-double": {
       "reps": 1,
       "inner_reps": 10,
@@ -340,7 +304,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -348,7 +311,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt-double": {
       "reps": 1,
       "inner_reps": 10,
@@ -356,7 +318,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt8-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -364,7 +325,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt8-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -372,7 +332,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt16-float": {
       "reps": 1,
       "inner_reps": 10,
@@ -380,7 +339,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt16-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -388,7 +346,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt32-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -396,7 +353,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-3pt32-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -404,7 +360,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-2pt-float": {
       "reps": 1,
       "inner_reps": 50,
@@ -412,7 +367,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-upright-planar-2pt-double": {
       "reps": 1,
       "inner_reps": 1,
@@ -420,7 +374,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-homography-float": {
       "reps": 1,
       "inner_reps": 50,
@@ -428,7 +381,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-homography-double": {
       "reps": 1,
       "inner_reps": 50,
@@ -436,7 +388,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-gold-standard-abs-float": {
       "reps": 1,
       "inner_reps": 10,
@@ -444,7 +395,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-gold-standard-abs-double": {
       "reps": 1,
       "inner_reps": 10,
@@ -452,7 +402,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-gold-standard-rel-float": {
       "reps": 1,
       "inner_reps": 10,
@@ -460,7 +409,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-lo-ransac-p3p-nonlinear-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -468,7 +416,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-gold-standard-rel-double": {
       "reps": 1,
       "inner_reps": 10,
@@ -476,7 +423,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-robofly-ekf-float": {
       "reps": 1,
       "inner_reps": 20,
@@ -484,7 +430,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-robobee-ekf-float": {
       "reps": 1,
       "inner_reps": 20,
@@ -492,7 +437,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-ekf-sync-update-float": {
       "reps": 1,
       "inner_reps": 50,
@@ -500,7 +444,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-lo-ransac-p3p-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -508,7 +451,6 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-lo-ransac-8pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -516,7 +458,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-lo-ransac-5pt-float": {
       "reps": 1,
       "inner_reps": 1,
@@ -524,7 +465,6 @@
       "enable_caches": true,
       "max_problems": 100
     },
-
     "bench-ekf-seq-update-float": {
       "reps": 1,
       "inner_reps": 50,
@@ -532,13 +472,14 @@
       "enable_caches": false,
       "max_problems": 100
     },
-
     "bench-ekf-truncated-update-float": {
       "reps": 1,
       "inner_reps": 50,
       "verbosity": 1,
       "enable_caches": false,
       "max_problems": 100
-    }
+    },
+    "enable_caches": false,
+    "enable_prefetch": false
   }
-} 
+}
