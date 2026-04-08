@@ -1,1 +1,18 @@
-../../external/ento-bench/benchmark/configs/example_benchmarks.json
+{
+  "examples" : {
+    "reps": 10,
+    "inner_reps": 50,
+    "verbosity": 1,
+    "enable_caches": true,
+    "max_problems": 1
+  },
+  "targets": {
+	"bench-example": {
+	"reps": 10,
+	"inner_reps": 50,
+	"verbosity": 1,
+	"enable_caches": true,
+	"max_problems": 1
+    }
+  }
+}
