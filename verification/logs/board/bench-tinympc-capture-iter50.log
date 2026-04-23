@@ -1,0 +1,98 @@
+[  0%] Built target ento-mcu-semihosted
+[100%] Built target bench
+[100%] Built target CMSIS_LD_G474RE
+[100%] Building CXX object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/bench_tinympc_capture.cc.obj
+In file included from /Users/derinozturk/research/repos/stm32-board-microbenchmarks/benchmark/microbench/bench_tinympc_capture.cc:15:
+/Users/derinozturk/research/repos/stm32-board-microbenchmarks/external/ento-bench/src/ento-control/tinympc_solver.h: In instantiation of 'Eigen::Matrix<Scalar_t, NINPUTS, 1> TinyMPCSolver<Scalar_t, NSTATES, NINPUTS, NHORIZON>::get_u0() const [with Scalar_t = float; int NSTATES = 12; int NINPUTS = 4; int NHORIZON = 10]':
+/Users/derinozturk/research/repos/stm32-board-microbenchmarks/benchmark/microbench/bench_tinympc_capture.cc:82:63:   required from here
+   82 |     Eigen::Matrix<Scalar_t, num_inputs, 1> u0 = solver_.get_u0();
+      |                                                 ~~~~~~~~~~~~~~^~
+/Users/derinozturk/research/repos/stm32-board-microbenchmarks/external/ento-bench/src/ento-control/tinympc_solver.h:366:41: note: parameter passing for argument of type 'Eigen::Matrix<float, 4, 1>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  366 |   Eigen::Matrix< Scalar_t, NINPUTS, 1 > get_u0() const
+      |                                         ^~~~~~
+[100%] Building C object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-hal-g4-src/Src/stm32g4xx_ll_rcc.c.obj
+[100%] Building C object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-hal-g4-src/Src/stm32g4xx_ll_pwr.c.obj
+[100%] Building C object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-hal-g4-src/Src/stm32g4xx_ll_utils.c.obj
+[100%] Building C object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-hal-g4-src/Src/stm32g4xx_ll_gpio.c.obj
+[100%] Building ASM object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-cmsis-g4-src/Source/Templates/gcc/startup_stm32g474xx.s.obj
+[100%] Building C object microbench/CMakeFiles/bench-tinympc-capture-iter50.dir/__/_deps/stm32-cmsis-g4-src/Source/Templates/system_stm32g4xx.c.obj
+[100%] Linking CXX executable ../bin/bench-tinympc-capture-iter50.elf
+/Users/derinozturk/.toolchains/arm-gnu-toolchain-14.2/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld: warning: ../bin/bench-tinympc-capture-iter50.elf has a LOAD segment with RWX permissions
+Memory region         Used Size  Region Size  %age Used
+           FLASH:      126880 B       512 KB     24.20%
+             RAM:       13184 B       128 KB     10.06%
+[100%] Built target bench-tinympc-capture-iter50
+[100%] Flashing bench-tinympc-capture-iter50 and logging to /Users/derinozturk/research/repos/stm32-board-microbenchmarks/build-entobench/microbench/flash-bench-tinympc-capture-iter50_r10_ir5000_v1_wu_cache_pf.log
+Open On-Chip Debugger 0.12.0+dev-01573-gbc9ca5f4a (2025-02-18-17:55)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "dapdirect_swd". To override use 'transport select <transport>'.
+Info : STLINK V4J2B1S0 (API v3) VID:PID 0483:3757
+Info : Target voltage: 3.286154
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : clock speed 1000 kHz
+Info : stlink_dap_op_connect(connect)
+Info : SWD DPIDR 0x2ba01477
+Info : [stm32g4x.cpu] Cortex-M4 r0p1 processor detected
+Info : [stm32g4x.cpu] target has 6 breakpoints, 4 watchpoints
+Info : [stm32g4x.cpu] Examination succeed
+Info : starting gdb server for stm32g4x.cpu on 3333
+Info : Listening on port 3333 for gdb connections
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+[stm32g4x.cpu] halted due to breakpoint, current mode: Thread 
+xPSR: 0x01000000 pc: 0x08006ed8 msp: 0x20020000
+semihosting is enabled
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+[stm32g4x.cpu] halted due to breakpoint, current mode: Thread 
+xPSR: 0x01000000 pc: 0x08006ed8 msp: 0x20020000, semihosting
+** Programming Started **
+Info : device idcode = 0x20036469 (STM32G47/G48xx - Rev 'unknown' : 0x2003)
+Info : RDP level 0 (0xAA)
+Info : flash size = 512 KiB
+Info : flash mode : dual-bank
+Warn : Adding extra erase range, 0x0801efa0 .. 0x0801efff
+** Programming Finished **
+** Verify Started **
+** Verified OK **
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+=== Benchmark Configuration ===
+REPS: 10
+INNER_REPS: 1
+VERBOSITY: 1
+MAX_PROBLEMS: 0
+DO_WARMUP: true
+ENABLE_CACHES: true
+ENABLE_PREFETCH: true
+ENABLE_VECTORIZATION: false
+H7_PERFORMANCE_MULTIPLIER: 1
+===============================
+Rep 0: Cycles = 422929 
+Rep 1: Cycles = 32978 
+Rep 2: Cycles = 32978 
+Rep 3: Cycles = 32978 
+Rep 4: Cycles = 32978 
+Rep 5: Cycles = 32978 
+Rep 6: Cycles = 33016 
+Rep 7: Cycles = 32978 
+Rep 8: Cycles = 32978 
+Rep 9: Cycles = 32978 
+Results from running bench_tinympc_capture_iter50 for 10 repetitions.
+Average cycles: 71976.900
+Max cycles: 422929
+Min cycles: 32978
+========================================
+Results from running bench_tinympc_capture_iter50 for 10 iterations.
+Cold cycles: 536998096
+Final ROI cycles: 71976
+Average cycles: 10495.000
+Max cycles: 71976
+Min cycles: 32974
+ENTO_RESULT name=bench_tinympc_capture_iter50 validate=SKIP sig_hash=03a47b69fd01953b sig_len=16 sig_hex=5211033e16c1eb3d5cd30f3e935e183e
+[100%] Built target stm32-flash-bench-tinympc-capture-iter50-semihosted

@@ -140,6 +140,18 @@ INSTRUCTIONS = [
         "entry": [3.75],
         "clobbers": '"s0"',
     },
+    {
+        "name": "vcvt_f32_u32",
+        "asm": "vcvt.f32.u32 s0, s0",
+        "entry_raw": [42],
+        "clobbers": '"s0"',
+    },
+    {
+        "name": "vcvt_u32_f32",
+        "asm": "vcvt.u32.f32 s0, s0",
+        "entry": [3.75],
+        "clobbers": '"s0"',
+    },
 ]
 
 

@@ -1,0 +1,78 @@
+[  0%] Built target ento-mcu-semihosted
+[100%] Built target bench
+[100%] Built target CMSIS_LD_G474RE
+[100%] Built target bench-fpu-vmul-f32
+[100%] Flashing bench-fpu-vmul-f32 and logging to /Users/derinozturk/research/repos/stm32-board-microbenchmarks/build-entobench/microbench/flash-bench-fpu-vmul-f32_r10_ir5000_v1_wu_cache_pf.log
+Open On-Chip Debugger 0.12.0+dev-01573-gbc9ca5f4a (2025-02-18-17:55)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "dapdirect_swd". To override use 'transport select <transport>'.
+Info : STLINK V4J2B1S0 (API v3) VID:PID 0483:3757
+Info : Target voltage: 3.286154
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : clock speed 1000 kHz
+Info : stlink_dap_op_connect(connect)
+Info : SWD DPIDR 0x2ba01477
+Info : [stm32g4x.cpu] Cortex-M4 r0p1 processor detected
+Info : [stm32g4x.cpu] target has 6 breakpoints, 4 watchpoints
+Info : [stm32g4x.cpu] Examination succeed
+Info : starting gdb server for stm32g4x.cpu on 3333
+Info : Listening on port 3333 for gdb connections
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+[stm32g4x.cpu] halted due to breakpoint, current mode: Thread 
+xPSR: 0x01000000 pc: 0x08001d78 msp: 0x20020000
+semihosting is enabled
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+[stm32g4x.cpu] halted due to breakpoint, current mode: Thread 
+xPSR: 0x01000000 pc: 0x08001d78 msp: 0x20020000, semihosting
+** Programming Started **
+Info : device idcode = 0x20036469 (STM32G47/G48xx - Rev 'unknown' : 0x2003)
+Info : RDP level 0 (0xAA)
+Info : flash size = 512 KiB
+Info : flash mode : dual-bank
+Warn : Adding extra erase range, 0x08009d90 .. 0x08009fff
+** Programming Finished **
+** Verify Started **
+** Verified OK **
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Unable to match requested speed 2000 kHz, using 1000 kHz
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+=== Benchmark Configuration ===
+REPS: 10
+INNER_REPS: 5000
+VERBOSITY: 1
+MAX_PROBLEMS: 0
+DO_WARMUP: true
+ENABLE_CACHES: true
+ENABLE_PREFETCH: true
+ENABLE_VECTORIZATION: false
+H7_PERFORMANCE_MULTIPLIER: 1
+===============================
+Rep 0: Cycles = 65007 
+Rep 1: Cycles = 65051 
+Rep 2: Cycles = 65007 
+Rep 3: Cycles = 65007 
+Rep 4: Cycles = 65051 
+Rep 5: Cycles = 65007 
+Rep 6: Cycles = 65049 
+Rep 7: Cycles = 65007 
+Rep 8: Cycles = 65007 
+Rep 9: Cycles = 65054 
+Results from running bench_fpu_vmul_f32 for 10 repetitions.
+Average cycles: 65024.700
+Max cycles: 65054
+Min cycles: 65007
+========================================
+Results from running bench_fpu_vmul_f32 for 10 iterations.
+Cold cycles: 537000848
+Final ROI cycles: 65024
+Average cycles: 6503.800
+Max cycles: 65024
+Min cycles: 14
+ENTO_RESULT name=bench_fpu_vmul_f32 validate=SKIP sig_hash=d480c2d17bf4d285 sig_len=8 sig_hex=0000004000000000
+[100%] Built target stm32-flash-bench-fpu-vmul-f32-semihosted

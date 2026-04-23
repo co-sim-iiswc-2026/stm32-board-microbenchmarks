@@ -42,6 +42,11 @@ BENCHES=(
     bench-fpu-vneg-f32
     bench-fpu-vcvt-f32-s32
     bench-fpu-vcvt-s32-f32
+    bench-fpu-vcvt-f32-u32
+    bench-fpu-vcvt-u32-f32
+    bench-vldm-vstm-capture
+    bench-vmov-capture
+    bench-vpush-vpop-capture
 )
 
 mkdir -p "$OUT_BASE"
