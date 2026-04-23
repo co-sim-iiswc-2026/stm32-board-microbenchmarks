@@ -21,6 +21,7 @@ SUMMARY="$OUT_BASE/ento_results.txt"
 
 BENCHES=(
     bench-tinympc-capture
+    bench-tinympc-capture-iter0
     bench-tinympc-capture-iter1
     bench-tinympc-capture-iter5
     bench-tinympc-capture-iter20

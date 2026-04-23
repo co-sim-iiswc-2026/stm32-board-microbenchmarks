@@ -24,6 +24,13 @@ extern "C" void initialise_monitor_handles(void);
 #define TINYMPC_MAX_ITER 100
 #endif
 
+#ifndef BENCH_NAME
+#define BENCH_NAME bench_tinympc_capture
+#endif
+
+#define XSTR(x) #x
+#define STR(x) XSTR(x)
+
 constexpr int num_states  = 12;
 constexpr int num_inputs  = 4;
 constexpr int len_horizon = 10;
@@ -157,7 +164,7 @@ int main()
 
   BenchTinyMPCCapture problem(solver);
   ENTO_BENCH_HARNESS_TYPE(decltype(problem));
-  BenchHarness harness(problem, "bench_tinympc_capture");
+  BenchHarness harness(problem, STR(BENCH_NAME));
   harness.run();
 
   exit(0);

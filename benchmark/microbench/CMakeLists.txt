@@ -277,9 +277,12 @@ endforeach()
 
 # TinyMPC iteration-count variants — same .cc, different TINYMPC_MAX_ITER.
 # Used to bisect ADMM iteration count when hunting board↔gem5 divergence.
-set(TINYMPC_ITER_VARIANTS 1 5 20 50)
+# iter=0 is diagnostic: validates the solver actually iterates (if u[0] at
+# iter=0 equals iter=1, solver isn't doing anything).
+set(TINYMPC_ITER_VARIANTS 0 1 5 20 50)
 foreach(iter ${TINYMPC_ITER_VARIANTS})
     set(variant_tgt "bench-tinympc-capture-iter${iter}")
+    set(variant_name "bench_tinympc_capture_iter${iter}")
     add_benchmark(${variant_tgt}
       SOURCES bench_tinympc_capture.cc
       LIBRARIES ${MODULES}
@@ -289,7 +292,10 @@ foreach(iter ${TINYMPC_ITER_VARIANTS})
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    target_compile_definitions(${variant_tgt} PRIVATE TINYMPC_MAX_ITER=${iter})
+    target_compile_definitions(${variant_tgt} PRIVATE
+      TINYMPC_MAX_ITER=${iter}
+      BENCH_NAME=${variant_name}
+    )
     list(APPEND BENCH_TARGETS ${variant_tgt})
 endforeach()
 
