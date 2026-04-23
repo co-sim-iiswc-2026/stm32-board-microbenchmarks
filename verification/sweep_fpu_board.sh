@@ -42,6 +42,9 @@ BENCHES=(
     bench-vmov-capture
     bench-vpush-vpop-capture
     bench-matvec-12x12-capture
+    bench-vldmia-d1-capture
+    bench-vldmia-d7wb-capture
+    bench-vldmia-d-range-capture
 )
 
 mkdir -p "$LOG_DIR"
