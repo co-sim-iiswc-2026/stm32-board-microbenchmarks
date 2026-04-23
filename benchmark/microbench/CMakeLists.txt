@@ -275,6 +275,28 @@ foreach(tgt ${CAPTURE_BENCHMARKS})
 endforeach()
 
 # =============================================================================
+# Generated FPU capture benchmarks (verification/gen/fpu_single.py)
+# =============================================================================
+file(GLOB GENERATED_FPU_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/generated/bench_fpu_*.cc"
+)
+
+foreach(src ${GENERATED_FPU_SOURCES})
+    get_filename_component(src_name ${src} NAME_WE)
+    string(REPLACE "_" "-" tgt ${src_name})
+    add_benchmark(${tgt}
+      SOURCES generated/${src_name}.cc
+      LIBRARIES ${MODULES}
+    )
+    target_include_directories(${tgt} PRIVATE
+      ${EIGEN_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    list(APPEND BENCH_TARGETS ${tgt})
+endforeach()
+
+# =============================================================================
 # Inline-asm benchmarks (ROI inside function, compiler-managed layout)
 # =============================================================================
 add_benchmark(bench-inline
