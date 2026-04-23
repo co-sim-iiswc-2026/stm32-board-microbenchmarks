@@ -262,6 +262,7 @@ set(CAPTURE_BENCHMARKS
     bench-vldm-vstm-capture
     bench-vmov-capture
     bench-vpush-vpop-capture
+    bench-matvec-12x12-capture
 )
 
 foreach(tgt ${CAPTURE_BENCHMARKS})
