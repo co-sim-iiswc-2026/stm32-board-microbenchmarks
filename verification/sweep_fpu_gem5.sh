@@ -19,13 +19,8 @@ FW_DIR="build-gem5/bin"
 OUT_BASE="verification/logs/gem5"
 SUMMARY="$OUT_BASE/ento_results.txt"
 
-BENCHES=(
-    bench-tinympc-capture
-    bench-tinympc-capture-iter0
-    bench-tinympc-capture-iter1
-    bench-tinympc-capture-iter5
-    bench-tinympc-capture-iter20
-    bench-tinympc-capture-iter50
+# Single-instruction FPU tests — the default sweep.
+FPU_BENCHES=(
     bench-fpu-vadd-f32
     bench-fpu-vsub-f32
     bench-fpu-vmul-f32
@@ -48,6 +43,35 @@ BENCHES=(
     bench-vmov-capture
     bench-vpush-vpop-capture
 )
+
+# TinyMPC variants — opt-in via INCLUDE_MPC=1 (slower, already known to NaN in gem5).
+MPC_BENCHES=(
+    bench-tinympc-capture
+    bench-tinympc-capture-iter0
+    bench-tinympc-capture-iter1
+    bench-tinympc-capture-iter5
+    bench-tinympc-capture-iter20
+    bench-tinympc-capture-iter50
+)
+
+INCLUDE_MPC=0
+for arg in "$@"; do
+    case "$arg" in
+        --mpc) INCLUDE_MPC=1 ;;
+        -h|--help)
+            echo "Usage: $0 [--mpc]"
+            echo "  --mpc   also run TinyMPC capture variants (default: FPU only)"
+            exit 0
+            ;;
+        *) echo "Unknown arg: $arg" >&2; exit 1 ;;
+    esac
+done
+
+if [[ "$INCLUDE_MPC" == "1" ]]; then
+    BENCHES=("${MPC_BENCHES[@]}" "${FPU_BENCHES[@]}")
+else
+    BENCHES=("${FPU_BENCHES[@]}")
+fi
 
 mkdir -p "$OUT_BASE"
 : > "$SUMMARY"
