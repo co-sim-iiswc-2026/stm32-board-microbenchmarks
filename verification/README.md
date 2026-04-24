@@ -71,11 +71,14 @@ normalization, clear per-test divergence output):
 ./verification/diff_gem5_vs_board.sh <board_log> <gem5_log>
 ```
 
-`verification/board_reference.txt` is the committed board baseline. Refresh
-deliberately after a board sweep you've verified:
+`verification/board_reference.txt` is the committed board baseline, scoped
+to FPU tests only (tinympc + matvec are excluded — they depend on the known
+multi-d-reg vldmia bug). Refresh deliberately after a board sweep you've
+verified:
 ```bash
-cp verification/logs/board/ento_results.txt verification/board_reference.txt
-# then update the header comment and commit
+grep -vE '(tinympc|matvec)' verification/logs/board/ento_results.txt \
+  > verification/board_reference.txt.new
+# then prepend the header comment, replace the old file, and commit
 ```
 
 Each sweep also preserves history under
@@ -83,6 +86,31 @@ Each sweep also preserves history under
 (per-run summary + per-test logs). The top-level `ento_results.txt` is a
 symlink to the latest run, as is `latest/`. One-line provenance per run is
 appended to `runs.log` in the same directory.
+
+## For gem5 model developers (no board needed)
+
+If you're iterating on Zhantong's cortex-m gem5 fork and want to check a
+change against real silicon, you don't need a board — the committed
+`verification/board_reference.txt` is the oracle.
+
+```bash
+git pull                                        # get latest reference
+cmake --build <your-gem5-build> --target microbench-all -j
+
+# GEM5_BIN and GEM5_SCRIPT default to /work/global/ddo26/gem5/... —
+# override to point at your own build + run script.
+GEM5_BIN=/path/to/your/gem5.opt \
+GEM5_SCRIPT=/path/to/gem5/run_m5op_bench.py \
+  ./verification/sweep_fpu_gem5.sh
+
+./verification/diff_gem5_vs_board.sh            # structured diff
+```
+
+Exit code = count of divergent+missing tests (capped at 255), so you can
+wire this into a pre-merge check. Scope is FPU only; TinyMPC and matvec
+are excluded from the reference (they depend on the known multi-d-reg
+vldmia bug). Opt-in to TinyMPC locally with `sweep_fpu_gem5.sh --mpc`
+if you want to compare those too.
 
 ## Layout
 
