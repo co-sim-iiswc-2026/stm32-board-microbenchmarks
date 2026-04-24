@@ -16,8 +16,13 @@ cd "$(dirname "$0")/.."
 GEM5_BIN="${GEM5_BIN:-/work/global/ddo26/gem5/build/ARM/gem5.opt}"
 GEM5_SCRIPT="${GEM5_SCRIPT:-/work/global/ddo26/gem5/run_m5op_bench.py}"
 FW_DIR="build-gem5/bin"
-OUT_BASE="verification/logs/gem5"
-SUMMARY="$OUT_BASE/ento_results.txt"
+LOGS_ROOT="verification/logs/gem5"
+HEAD_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
+RUN_TAG="${HEAD_SHA}-$(date -u +%Y%m%dT%H%M%SZ)"
+RUN_DIR="$LOGS_ROOT/runs/$RUN_TAG"
+OUT_BASE="$RUN_DIR"
+SUMMARY="$RUN_DIR/ento_results.txt"
+RUNS_LOG="$LOGS_ROOT/runs.log"
 
 # Single-instruction FPU tests — the default sweep.
 FPU_BENCHES=(
@@ -47,6 +52,48 @@ FPU_BENCHES=(
     bench-vldmia-d7wb-capture
     bench-vldmia-d-range-capture
     bench-vstmia-d-range-capture
+    # Preamble-zeroing unit tests (isolate the s0..s31 zeroing path)
+    bench-preamble-zero-vmov-dpair-capture
+    bench-preamble-zero-vmov-ssingle-capture
+    bench-preamble-zero-vldr-capture
+    # Level A — single FPU instruction repeated N times (fpu_repeat.py)
+    bench-fpu-repeat-vadd-f32-n2
+    bench-fpu-repeat-vadd-f32-n8
+    bench-fpu-repeat-vadd-f32-n64
+    bench-fpu-repeat-vadd-f32-n256
+    bench-fpu-repeat-vsub-f32-n2
+    bench-fpu-repeat-vsub-f32-n8
+    bench-fpu-repeat-vsub-f32-n64
+    bench-fpu-repeat-vsub-f32-n256
+    bench-fpu-repeat-vmul-f32-n2
+    bench-fpu-repeat-vmul-f32-n8
+    bench-fpu-repeat-vmul-f32-n64
+    bench-fpu-repeat-vmul-f32-n256
+    bench-fpu-repeat-vfma-f32-n2
+    bench-fpu-repeat-vfma-f32-n8
+    bench-fpu-repeat-vfma-f32-n64
+    bench-fpu-repeat-vfma-f32-n256
+    bench-fpu-repeat-vmla-f32-n2
+    bench-fpu-repeat-vmla-f32-n8
+    bench-fpu-repeat-vmla-f32-n64
+    bench-fpu-repeat-vmla-f32-n256
+    # Level B — random VFP sequences (fpu_seq.py)
+    bench-fpu-seq-s00000001-n10
+    bench-fpu-seq-s00000001-n20
+    bench-fpu-seq-sdeadbeef-n10
+    bench-fpu-seq-sdeadbeef-n20
+    bench-fpu-seq-scafef00d-n10
+    bench-fpu-seq-scafef00d-n20
+    bench-fpu-seq-sbeefdead-n10
+    bench-fpu-seq-sbeefdead-n20
+    bench-fpu-seq-s12345678-n10
+    bench-fpu-seq-s12345678-n20
+    bench-fpu-seq-sabcdef01-n10
+    bench-fpu-seq-sabcdef01-n20
+    bench-fpu-seq-s5a5a5a5a-n10
+    bench-fpu-seq-s5a5a5a5a-n20
+    bench-fpu-seq-sa5a5a5a5-n10
+    bench-fpu-seq-sa5a5a5a5-n20
 )
 
 # TinyMPC variants — opt-in via INCLUDE_MPC=1 (slower, already known to NaN in gem5).
@@ -78,7 +125,7 @@ else
     BENCHES=("${FPU_BENCHES[@]}")
 fi
 
-mkdir -p "$OUT_BASE"
+mkdir -p "$RUN_DIR"
 : > "$SUMMARY"
 
 if [[ ! -x "$GEM5_BIN" ]]; then
@@ -93,8 +140,9 @@ if [[ ! -f "$GEM5_SCRIPT" ]]; then
 fi
 
 echo "Sweeping ${#BENCHES[@]} FPU tests in gem5..."
-echo "  gem5:   $GEM5_BIN"
-echo "  script: $GEM5_SCRIPT"
+echo "  gem5:    $GEM5_BIN"
+echo "  script:  $GEM5_SCRIPT"
+echo "  run dir: $RUN_DIR"
 echo
 
 for bench in "${BENCHES[@]}"; do
@@ -126,9 +174,23 @@ for bench in "${BENCHES[@]}"; do
     fi
 done
 
+OK_COUNT=$(grep -c "^ENTO_RESULT" "$SUMMARY" || true)
+TOTAL=${#BENCHES[@]}
+
+# Point `latest` and the compat `ento_results.txt` at this run.
+ln -sfn "runs/$RUN_TAG" "$LOGS_ROOT/latest"
+ln -sfn "runs/$RUN_TAG/ento_results.txt" "$LOGS_ROOT/ento_results.txt"
+
+# Append one-line run summary to runs.log.
+printf '%s | HEAD=%s | %d/%d OK | dir=runs/%s\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$HEAD_SHA" "$OK_COUNT" "$TOTAL" "$RUN_TAG" \
+  >> "$RUNS_LOG"
+
 echo
-echo "Per-test outdirs:  $OUT_BASE/m5out_*"
+echo "Per-test outdirs:  $RUN_DIR/m5out_*"
 echo "Summary:           $SUMMARY"
+echo "Latest:            $LOGS_ROOT/latest -> runs/$RUN_TAG"
+echo "Runs log:          $RUNS_LOG  ($OK_COUNT/$TOTAL OK this run)"
 echo
 echo "=== All ENTO_RESULT lines ==="
 cat "$SUMMARY"

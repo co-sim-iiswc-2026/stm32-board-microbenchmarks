@@ -267,6 +267,11 @@ set(CAPTURE_BENCHMARKS
     bench-vldmia-d7wb-capture
     bench-vldmia-d-range-capture
     bench-vstmia-d-range-capture
+    # Preamble-zeroing unit tests (pin down the "zero s0..s31" path
+    # used by Level A/B so any decoder bug there is caught in isolation).
+    bench-preamble-zero-vmov-dpair-capture
+    bench-preamble-zero-vmov-ssingle-capture
+    bench-preamble-zero-vldr-capture
 )
 
 foreach(tgt ${CAPTURE_BENCHMARKS})

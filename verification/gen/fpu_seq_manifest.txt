@@ -1,0 +1,595 @@
+# fpu_seq manifest — seed, entries, and instruction sequence
+# for each generated Level B test. Re-generate via
+# verification/gen/fpu_seq.py. Do not edit.
+
+[bench_fpu_seq_s00000001_n10]
+seed    = 0x00000001
+length  = 10
+entry:
+  s0  = 0x3fe2b510  1.771150605405849f
+  s1  = 0xbf61f24e  -0.8826035386091325f
+  s2  = 0x3f964d63  1.1742365971831072f
+  s3  = 0xbfd76f55  -1.6830850267032698f
+  s4  = 0x3f0ae2ac  0.5425212147830094f
+  s5  = 0xbf93175e  -1.1491506018575801f
+  s6  = 0xbf00cf09  -0.5031590800266661f
+  s7  = 0x3fca8923  1.5823100485111739f
+  s8  = 0x3ff57df2  1.9179060433308834f
+  s9  = 0xbf0bbf1e  -0.5458849745503302f
+  s10 = 0x3fa7f382  1.3121187091902449f
+  s11 = 0xbf8930f3  -1.0718063565323186f
+  s12 = 0x3f910be0  1.133174863374076f
+  s13 = 0x3f55212d  0.8325374994095526f
+  s14 = 0x3f9f322a  1.243718362072776f
+  s15 = 0x3f58a71b  0.8462998123114764f
+sequence:
+  vneg.f32 s14, s9
+  vadd.f32 s13, s3, s5
+  vabs.f32 s3, s10
+  vfma.f32 s6, s9, s9
+  vmla.f32 s12, s1, s15
+  vneg.f32 s12, s13
+  vmul.f32 s11, s11, s2
+  vmla.f32 s3, s5, s12
+  vmov.f32 s15, s0
+  vmla.f32 s1, s9, s12
+
+[bench_fpu_seq_s00000001_n20]
+seed    = 0x00000001
+length  = 20
+entry:
+  s0  = 0x3fe2b510  1.771150605405849f
+  s1  = 0xbf61f24e  -0.8826035386091325f
+  s2  = 0x3f964d63  1.1742365971831072f
+  s3  = 0xbfd76f55  -1.6830850267032698f
+  s4  = 0x3f0ae2ac  0.5425212147830094f
+  s5  = 0xbf93175e  -1.1491506018575801f
+  s6  = 0xbf00cf09  -0.5031590800266661f
+  s7  = 0x3fca8923  1.5823100485111739f
+  s8  = 0x3ff57df2  1.9179060433308834f
+  s9  = 0xbf0bbf1e  -0.5458849745503302f
+  s10 = 0x3fa7f382  1.3121187091902449f
+  s11 = 0xbf8930f3  -1.0718063565323186f
+  s12 = 0x3f910be0  1.133174863374076f
+  s13 = 0x3f55212d  0.8325374994095526f
+  s14 = 0x3f9f322a  1.243718362072776f
+  s15 = 0x3f58a71b  0.8462998123114764f
+sequence:
+  vneg.f32 s14, s9
+  vadd.f32 s13, s3, s5
+  vabs.f32 s3, s10
+  vfma.f32 s6, s9, s9
+  vmla.f32 s12, s1, s15
+  vneg.f32 s12, s13
+  vmul.f32 s11, s11, s2
+  vmla.f32 s3, s5, s12
+  vmov.f32 s15, s0
+  vmla.f32 s1, s9, s12
+  vmul.f32 s5, s7, s0
+  vneg.f32 s7, s12
+  vmov.f32 s11, s14
+  vabs.f32 s0, s12
+  vmul.f32 s6, s13, s1
+  vmla.f32 s11, s6, s13
+  vmla.f32 s11, s13, s11
+  vadd.f32 s10, s14, s0
+  vneg.f32 s5, s5
+  vsub.f32 s8, s1, s2
+
+[bench_fpu_seq_sdeadbeef_n10]
+seed    = 0xdeadbeef
+length  = 10
+entry:
+  s0  = 0x3f9a2b60  1.20444866902994f
+  s1  = 0xbf91cf52  -1.139139472253634f
+  s2  = 0xbfcbb2ba  -1.591391851444372f
+  s3  = 0xbff95831  -1.9480039417568273f
+  s4  = 0x3f860834  1.0471253621744552f
+  s5  = 0xbfcacc0f  -1.5843523843986689f
+  s6  = 0xbf89371d  -1.0719944020318077f
+  s7  = 0xbf66ca7d  -0.9015272290587217f
+  s8  = 0xbffac562  -1.9591486854594495f
+  s9  = 0x3f79051a  0.9727340794046961f
+  s10 = 0x3f8f0e8b  1.117631312280919f
+  s11 = 0xbfaf97d7  -1.3718213007593527f
+  s12 = 0x3ffffde0  1.999935156789552f
+  s13 = 0xbf02ebfc  -0.5114133487115524f
+  s14 = 0x3fc41e75  1.5321794474309272f
+  s15 = 0x3ff43cd2  1.9081061255033445f
+sequence:
+  vmul.f32 s11, s15, s10
+  vmla.f32 s12, s14, s8
+  vneg.f32 s2, s14
+  vmov.f32 s15, s6
+  vadd.f32 s1, s4, s8
+  vmla.f32 s11, s14, s1
+  vmul.f32 s14, s7, s4
+  vabs.f32 s4, s14
+  vfma.f32 s5, s3, s12
+  vadd.f32 s10, s5, s13
+
+[bench_fpu_seq_sdeadbeef_n20]
+seed    = 0xdeadbeef
+length  = 20
+entry:
+  s0  = 0x3f9a2b60  1.20444866902994f
+  s1  = 0xbf91cf52  -1.139139472253634f
+  s2  = 0xbfcbb2ba  -1.591391851444372f
+  s3  = 0xbff95831  -1.9480039417568273f
+  s4  = 0x3f860834  1.0471253621744552f
+  s5  = 0xbfcacc0f  -1.5843523843986689f
+  s6  = 0xbf89371d  -1.0719944020318077f
+  s7  = 0xbf66ca7d  -0.9015272290587217f
+  s8  = 0xbffac562  -1.9591486854594495f
+  s9  = 0x3f79051a  0.9727340794046961f
+  s10 = 0x3f8f0e8b  1.117631312280919f
+  s11 = 0xbfaf97d7  -1.3718213007593527f
+  s12 = 0x3ffffde0  1.999935156789552f
+  s13 = 0xbf02ebfc  -0.5114133487115524f
+  s14 = 0x3fc41e75  1.5321794474309272f
+  s15 = 0x3ff43cd2  1.9081061255033445f
+sequence:
+  vmul.f32 s11, s15, s10
+  vmla.f32 s12, s14, s8
+  vneg.f32 s2, s14
+  vmov.f32 s15, s6
+  vadd.f32 s1, s4, s8
+  vmla.f32 s11, s14, s1
+  vmul.f32 s14, s7, s4
+  vabs.f32 s4, s14
+  vfma.f32 s5, s3, s12
+  vadd.f32 s10, s5, s13
+  vabs.f32 s5, s3
+  vadd.f32 s11, s11, s4
+  vneg.f32 s15, s3
+  vfma.f32 s13, s14, s14
+  vmla.f32 s7, s14, s0
+  vfma.f32 s4, s4, s11
+  vneg.f32 s10, s5
+  vfma.f32 s7, s2, s10
+  vmov.f32 s1, s3
+  vmov.f32 s3, s9
+
+[bench_fpu_seq_scafef00d_n10]
+seed    = 0xcafef00d
+length  = 10
+entry:
+  s0  = 0x3f94b87c  1.161880041117275f
+  s1  = 0x3f96d475  1.1783587295145352f
+  s2  = 0x3f261f10  0.6489114643358639f
+  s3  = 0xbf963767  -1.1735657263038235f
+  s4  = 0xbfe702eb  -1.8047765232787656f
+  s5  = 0xbf44e250  -0.7690782643096032f
+  s6  = 0x3f1ca256  0.6118520471603295f
+  s7  = 0x3fe11cee  1.7586953972035624f
+  s8  = 0x3fbb9899  1.4655943639367754f
+  s9  = 0xbfcc1297  -1.594317280237017f
+  s10 = 0xbff1ae8b  -1.8881391488782657f
+  s11 = 0x3f4b84bf  0.7949943192783133f
+  s12 = 0x3f0ac287  0.5420307367855759f
+  s13 = 0x3f9858a4  1.1902051311427422f
+  s14 = 0x3f1617a9  0.5862985304850634f
+  s15 = 0xbf3c92d2  -0.7366152801642154f
+sequence:
+  vmov.f32 s1, s15
+  vabs.f32 s7, s2
+  vmla.f32 s14, s3, s5
+  vsub.f32 s8, s2, s1
+  vmul.f32 s13, s6, s1
+  vmov.f32 s11, s0
+  vsub.f32 s15, s0, s7
+  vmul.f32 s7, s15, s0
+  vmov.f32 s13, s12
+  vneg.f32 s5, s3
+
+[bench_fpu_seq_scafef00d_n20]
+seed    = 0xcafef00d
+length  = 20
+entry:
+  s0  = 0x3f94b87c  1.161880041117275f
+  s1  = 0x3f96d475  1.1783587295145352f
+  s2  = 0x3f261f10  0.6489114643358639f
+  s3  = 0xbf963767  -1.1735657263038235f
+  s4  = 0xbfe702eb  -1.8047765232787656f
+  s5  = 0xbf44e250  -0.7690782643096032f
+  s6  = 0x3f1ca256  0.6118520471603295f
+  s7  = 0x3fe11cee  1.7586953972035624f
+  s8  = 0x3fbb9899  1.4655943639367754f
+  s9  = 0xbfcc1297  -1.594317280237017f
+  s10 = 0xbff1ae8b  -1.8881391488782657f
+  s11 = 0x3f4b84bf  0.7949943192783133f
+  s12 = 0x3f0ac287  0.5420307367855759f
+  s13 = 0x3f9858a4  1.1902051311427422f
+  s14 = 0x3f1617a9  0.5862985304850634f
+  s15 = 0xbf3c92d2  -0.7366152801642154f
+sequence:
+  vmov.f32 s1, s15
+  vabs.f32 s7, s2
+  vmla.f32 s14, s3, s5
+  vsub.f32 s8, s2, s1
+  vmul.f32 s13, s6, s1
+  vmov.f32 s11, s0
+  vsub.f32 s15, s0, s7
+  vmul.f32 s7, s15, s0
+  vmov.f32 s13, s12
+  vneg.f32 s5, s3
+  vsub.f32 s15, s14, s8
+  vmla.f32 s12, s9, s15
+  vadd.f32 s11, s14, s5
+  vmla.f32 s10, s15, s6
+  vadd.f32 s9, s6, s13
+  vneg.f32 s2, s0
+  vmla.f32 s10, s5, s3
+  vmla.f32 s1, s9, s6
+  vadd.f32 s13, s4, s11
+  vsub.f32 s5, s0, s5
+
+[bench_fpu_seq_sbeefdead_n10]
+seed    = 0xbeefdead
+length  = 10
+entry:
+  s0  = 0x3fa79284  1.3091588496764592f
+  s1  = 0x3f6c05c5  0.9219630631422797f
+  s2  = 0xbfdce098  -1.7256040161220485f
+  s3  = 0xbf92c593  -1.1466544780915098f
+  s4  = 0xbfa2fe0c  -1.2733778615368283f
+  s5  = 0xbfcde75b  -1.6086229020467826f
+  s6  = 0xbf771eb6  -0.9653123333784497f
+  s7  = 0xbf657120  -0.8962573961365101f
+  s8  = 0x3fe88ac9  1.8167353715876915f
+  s9  = 0xbfb88492  -1.4415457552067479f
+  s10 = 0x3f7957f9  0.9739986284162209f
+  s11 = 0x3ffded9a  1.983813504017289f
+  s12 = 0xbfbb91d2  -1.4653875436594626f
+  s13 = 0xbfc2a209  -1.520569888863808f
+  s14 = 0xbfa22e9c  -1.2670474517279073f
+  s15 = 0xbfbabb82  -1.458847321332924f
+sequence:
+  vadd.f32 s12, s14, s1
+  vneg.f32 s10, s3
+  vmov.f32 s15, s14
+  vadd.f32 s1, s1, s1
+  vmla.f32 s14, s9, s12
+  vneg.f32 s1, s6
+  vsub.f32 s4, s3, s0
+  vmov.f32 s1, s13
+  vsub.f32 s7, s0, s11
+  vneg.f32 s0, s11
+
+[bench_fpu_seq_sbeefdead_n20]
+seed    = 0xbeefdead
+length  = 20
+entry:
+  s0  = 0x3fa79284  1.3091588496764592f
+  s1  = 0x3f6c05c5  0.9219630631422797f
+  s2  = 0xbfdce098  -1.7256040161220485f
+  s3  = 0xbf92c593  -1.1466544780915098f
+  s4  = 0xbfa2fe0c  -1.2733778615368283f
+  s5  = 0xbfcde75b  -1.6086229020467826f
+  s6  = 0xbf771eb6  -0.9653123333784497f
+  s7  = 0xbf657120  -0.8962573961365101f
+  s8  = 0x3fe88ac9  1.8167353715876915f
+  s9  = 0xbfb88492  -1.4415457552067479f
+  s10 = 0x3f7957f9  0.9739986284162209f
+  s11 = 0x3ffded9a  1.983813504017289f
+  s12 = 0xbfbb91d2  -1.4653875436594626f
+  s13 = 0xbfc2a209  -1.520569888863808f
+  s14 = 0xbfa22e9c  -1.2670474517279073f
+  s15 = 0xbfbabb82  -1.458847321332924f
+sequence:
+  vadd.f32 s12, s14, s1
+  vneg.f32 s10, s3
+  vmov.f32 s15, s14
+  vadd.f32 s1, s1, s1
+  vmla.f32 s14, s9, s12
+  vneg.f32 s1, s6
+  vsub.f32 s4, s3, s0
+  vmov.f32 s1, s13
+  vsub.f32 s7, s0, s11
+  vneg.f32 s0, s11
+  vmov.f32 s4, s2
+  vmul.f32 s5, s10, s12
+  vmov.f32 s5, s15
+  vmov.f32 s5, s14
+  vabs.f32 s12, s3
+  vsub.f32 s3, s2, s6
+  vmul.f32 s5, s0, s2
+  vmov.f32 s9, s5
+  vsub.f32 s14, s9, s15
+  vsub.f32 s2, s5, s9
+
+[bench_fpu_seq_s12345678_n10]
+seed    = 0x12345678
+length  = 10
+entry:
+  s0  = 0xbf53a4dd  -0.8267343822909583f
+  s1  = 0xbfcd441b  -1.6036408732060448f
+  s2  = 0x3fe3dce4  1.7801785425934493f
+  s3  = 0xbffe7465  -1.987927098869127f
+  s4  = 0xbfcfaf3a  -1.6225350296472827f
+  s5  = 0x3fb6c2a6  1.4278152578642618f
+  s6  = 0x3f3c9509  0.7366490922772466f
+  s7  = 0xbfacee47  -1.3510216930400898f
+  s8  = 0x3f894093  1.0722831925436336f
+  s9  = 0x3f46310a  0.7741858022910848f
+  s10 = 0x3f9cb2f1  1.2242108781185344f
+  s11 = 0x3fed1d10  1.8524493879938577f
+  s12 = 0xbf7d42ef  -0.9893025876704457f
+  s13 = 0x3f8d2a15  1.102846726879886f
+  s14 = 0x3f1d7f86  0.6152270979162049f
+  s15 = 0x3fa1e11a  1.26468200537492f
+sequence:
+  vmul.f32 s3, s9, s13
+  vabs.f32 s9, s0
+  vfma.f32 s4, s15, s13
+  vfma.f32 s3, s1, s1
+  vmov.f32 s15, s7
+  vfma.f32 s3, s13, s8
+  vabs.f32 s14, s15
+  vmla.f32 s2, s4, s15
+  vabs.f32 s8, s11
+  vmla.f32 s15, s0, s4
+
+[bench_fpu_seq_s12345678_n20]
+seed    = 0x12345678
+length  = 20
+entry:
+  s0  = 0xbf53a4dd  -0.8267343822909583f
+  s1  = 0xbfcd441b  -1.6036408732060448f
+  s2  = 0x3fe3dce4  1.7801785425934493f
+  s3  = 0xbffe7465  -1.987927098869127f
+  s4  = 0xbfcfaf3a  -1.6225350296472827f
+  s5  = 0x3fb6c2a6  1.4278152578642618f
+  s6  = 0x3f3c9509  0.7366490922772466f
+  s7  = 0xbfacee47  -1.3510216930400898f
+  s8  = 0x3f894093  1.0722831925436336f
+  s9  = 0x3f46310a  0.7741858022910848f
+  s10 = 0x3f9cb2f1  1.2242108781185344f
+  s11 = 0x3fed1d10  1.8524493879938577f
+  s12 = 0xbf7d42ef  -0.9893025876704457f
+  s13 = 0x3f8d2a15  1.102846726879886f
+  s14 = 0x3f1d7f86  0.6152270979162049f
+  s15 = 0x3fa1e11a  1.26468200537492f
+sequence:
+  vmul.f32 s3, s9, s13
+  vabs.f32 s9, s0
+  vfma.f32 s4, s15, s13
+  vfma.f32 s3, s1, s1
+  vmov.f32 s15, s7
+  vfma.f32 s3, s13, s8
+  vabs.f32 s14, s15
+  vmla.f32 s2, s4, s15
+  vabs.f32 s8, s11
+  vmla.f32 s15, s0, s4
+  vfma.f32 s2, s12, s7
+  vadd.f32 s0, s14, s2
+  vadd.f32 s3, s10, s0
+  vfma.f32 s11, s2, s1
+  vfma.f32 s11, s10, s12
+  vabs.f32 s1, s10
+  vabs.f32 s14, s13
+  vmul.f32 s3, s3, s5
+  vmov.f32 s6, s7
+  vmla.f32 s10, s2, s11
+
+[bench_fpu_seq_sabcdef01_n10]
+seed    = 0xabcdef01
+length  = 10
+entry:
+  s0  = 0x3fc717a3  1.5554088527395924f
+  s1  = 0xbfac54c8  -1.3463373591247216f
+  s2  = 0x3f951eea  1.1650059287137355f
+  s3  = 0xbfd5076f  -1.6642893867044477f
+  s4  = 0x3ff5a5a7  1.9191177974161717f
+  s5  = 0x3f9252a7  1.1431473392131264f
+  s6  = 0x3fc5411b  1.5410494145989948f
+  s7  = 0x3fce689f  1.6125678025100916f
+  s8  = 0x3ff8bbf1  1.943235551217657f
+  s9  = 0x3f6f3237  0.9343599641179241f
+  s10 = 0x3ffe0f82  1.9848482789606026f
+  s11 = 0x3feac853  1.8342383727769278f
+  s12 = 0x3fe47cdf  1.7850607049344167f
+  s13 = 0x3fd64ef5  1.6742846015591677f
+  s14 = 0xbf4bd633  -0.7962371443005244f
+  s15 = 0x3fe0597d  1.7527309657498538f
+sequence:
+  vmla.f32 s13, s6, s10
+  vfma.f32 s1, s6, s12
+  vadd.f32 s9, s10, s2
+  vmov.f32 s4, s8
+  vneg.f32 s8, s4
+  vmul.f32 s7, s2, s6
+  vfma.f32 s7, s0, s6
+  vsub.f32 s5, s2, s0
+  vfma.f32 s9, s11, s5
+  vabs.f32 s3, s3
+
+[bench_fpu_seq_sabcdef01_n20]
+seed    = 0xabcdef01
+length  = 20
+entry:
+  s0  = 0x3fc717a3  1.5554088527395924f
+  s1  = 0xbfac54c8  -1.3463373591247216f
+  s2  = 0x3f951eea  1.1650059287137355f
+  s3  = 0xbfd5076f  -1.6642893867044477f
+  s4  = 0x3ff5a5a7  1.9191177974161717f
+  s5  = 0x3f9252a7  1.1431473392131264f
+  s6  = 0x3fc5411b  1.5410494145989948f
+  s7  = 0x3fce689f  1.6125678025100916f
+  s8  = 0x3ff8bbf1  1.943235551217657f
+  s9  = 0x3f6f3237  0.9343599641179241f
+  s10 = 0x3ffe0f82  1.9848482789606026f
+  s11 = 0x3feac853  1.8342383727769278f
+  s12 = 0x3fe47cdf  1.7850607049344167f
+  s13 = 0x3fd64ef5  1.6742846015591677f
+  s14 = 0xbf4bd633  -0.7962371443005244f
+  s15 = 0x3fe0597d  1.7527309657498538f
+sequence:
+  vmla.f32 s13, s6, s10
+  vfma.f32 s1, s6, s12
+  vadd.f32 s9, s10, s2
+  vmov.f32 s4, s8
+  vneg.f32 s8, s4
+  vmul.f32 s7, s2, s6
+  vfma.f32 s7, s0, s6
+  vsub.f32 s5, s2, s0
+  vfma.f32 s9, s11, s5
+  vabs.f32 s3, s3
+  vmov.f32 s12, s4
+  vmul.f32 s1, s8, s12
+  vfma.f32 s14, s6, s8
+  vmla.f32 s9, s3, s7
+  vabs.f32 s12, s14
+  vmov.f32 s15, s7
+  vadd.f32 s9, s3, s3
+  vsub.f32 s6, s6, s9
+  vabs.f32 s13, s11
+  vneg.f32 s5, s11
+
+[bench_fpu_seq_s5a5a5a5a_n10]
+seed    = 0x5a5a5a5a
+length  = 10
+entry:
+  s0  = 0xbfe3fdee  -1.7811868707221465f
+  s1  = 0x3fda51c1  1.705619904620378f
+  s2  = 0x3f8a2a53  1.0794165787242307f
+  s3  = 0xbf7c4b37  -0.9855226975713546f
+  s4  = 0x3f36594e  0.7123002004550208f
+  s5  = 0x3f52aacd  0.8229187362361867f
+  s6  = 0x3fcc582c  1.5964408159701942f
+  s7  = 0xbf33012e  -0.6992367463068088f
+  s8  = 0x3f792b36  0.9733155979376598f
+  s9  = 0x3f6438a3  0.8914891816146555f
+  s10 = 0xbfb43224  -1.4077801554834468f
+  s11 = 0xbffa831e  -1.957126321720483f
+  s12 = 0x3f7a3cee  0.9774922126678562f
+  s13 = 0x3f893503  1.0719302763405718f
+  s14 = 0x3f858d64  1.0433774384516208f
+  s15 = 0x3f1e352b  0.6179987812506973f
+sequence:
+  vmov.f32 s11, s15
+  vabs.f32 s15, s8
+  vabs.f32 s5, s5
+  vabs.f32 s0, s0
+  vfma.f32 s15, s5, s9
+  vmul.f32 s10, s12, s10
+  vfma.f32 s15, s4, s13
+  vmla.f32 s3, s2, s7
+  vadd.f32 s3, s8, s2
+  vmov.f32 s8, s10
+
+[bench_fpu_seq_s5a5a5a5a_n20]
+seed    = 0x5a5a5a5a
+length  = 20
+entry:
+  s0  = 0xbfe3fdee  -1.7811868707221465f
+  s1  = 0x3fda51c1  1.705619904620378f
+  s2  = 0x3f8a2a53  1.0794165787242307f
+  s3  = 0xbf7c4b37  -0.9855226975713546f
+  s4  = 0x3f36594e  0.7123002004550208f
+  s5  = 0x3f52aacd  0.8229187362361867f
+  s6  = 0x3fcc582c  1.5964408159701942f
+  s7  = 0xbf33012e  -0.6992367463068088f
+  s8  = 0x3f792b36  0.9733155979376598f
+  s9  = 0x3f6438a3  0.8914891816146555f
+  s10 = 0xbfb43224  -1.4077801554834468f
+  s11 = 0xbffa831e  -1.957126321720483f
+  s12 = 0x3f7a3cee  0.9774922126678562f
+  s13 = 0x3f893503  1.0719302763405718f
+  s14 = 0x3f858d64  1.0433774384516208f
+  s15 = 0x3f1e352b  0.6179987812506973f
+sequence:
+  vmov.f32 s11, s15
+  vabs.f32 s15, s8
+  vabs.f32 s5, s5
+  vabs.f32 s0, s0
+  vfma.f32 s15, s5, s9
+  vmul.f32 s10, s12, s10
+  vfma.f32 s15, s4, s13
+  vmla.f32 s3, s2, s7
+  vadd.f32 s3, s8, s2
+  vmov.f32 s8, s10
+  vabs.f32 s15, s4
+  vmul.f32 s14, s4, s0
+  vadd.f32 s0, s10, s4
+  vfma.f32 s15, s9, s10
+  vneg.f32 s6, s13
+  vadd.f32 s8, s0, s13
+  vmul.f32 s7, s2, s6
+  vmul.f32 s0, s5, s8
+  vadd.f32 s12, s11, s14
+  vabs.f32 s9, s8
+
+[bench_fpu_seq_sa5a5a5a5_n10]
+seed    = 0xa5a5a5a5
+length  = 10
+entry:
+  s0  = 0xbf66973e  -0.9007452800136007f
+  s1  = 0xbfc5b3e0  -1.5445518292174965f
+  s2  = 0xbf4c3b2a  -0.7977777900842695f
+  s3  = 0x3fc232ef  1.5171793879782833f
+  s4  = 0x3fa7de6a  1.31147503378242f
+  s5  = 0xbfc2d811  -1.522218773594283f
+  s6  = 0xbfa274fe  -1.2691953105043843f
+  s7  = 0xbfbdd641  -1.4831009953568304f
+  s8  = 0x3fbca155  1.4736734140473464f
+  s9  = 0xbf8b0a7d  -1.08625754146909f
+  s10 = 0xbffaf9f9  -1.9607535707914006f
+  s11 = 0x3fc3512f  1.525915004942289f
+  s12 = 0xbfba36a2  -1.4547922878214288f
+  s13 = 0x3fa4e822  1.2883341151228342f
+  s14 = 0xbfa55e67  -1.2919434824487754f
+  s15 = 0xbf29a149  -0.6626172754581345f
+sequence:
+  vabs.f32 s9, s0
+  vfma.f32 s14, s3, s11
+  vfma.f32 s10, s3, s0
+  vabs.f32 s8, s8
+  vsub.f32 s0, s13, s4
+  vadd.f32 s9, s5, s5
+  vmov.f32 s11, s4
+  vmla.f32 s2, s2, s7
+  vmla.f32 s7, s3, s12
+  vsub.f32 s11, s3, s3
+
+[bench_fpu_seq_sa5a5a5a5_n20]
+seed    = 0xa5a5a5a5
+length  = 20
+entry:
+  s0  = 0xbf66973e  -0.9007452800136007f
+  s1  = 0xbfc5b3e0  -1.5445518292174965f
+  s2  = 0xbf4c3b2a  -0.7977777900842695f
+  s3  = 0x3fc232ef  1.5171793879782833f
+  s4  = 0x3fa7de6a  1.31147503378242f
+  s5  = 0xbfc2d811  -1.522218773594283f
+  s6  = 0xbfa274fe  -1.2691953105043843f
+  s7  = 0xbfbdd641  -1.4831009953568304f
+  s8  = 0x3fbca155  1.4736734140473464f
+  s9  = 0xbf8b0a7d  -1.08625754146909f
+  s10 = 0xbffaf9f9  -1.9607535707914006f
+  s11 = 0x3fc3512f  1.525915004942289f
+  s12 = 0xbfba36a2  -1.4547922878214288f
+  s13 = 0x3fa4e822  1.2883341151228342f
+  s14 = 0xbfa55e67  -1.2919434824487754f
+  s15 = 0xbf29a149  -0.6626172754581345f
+sequence:
+  vabs.f32 s9, s0
+  vfma.f32 s14, s3, s11
+  vfma.f32 s10, s3, s0
+  vabs.f32 s8, s8
+  vsub.f32 s0, s13, s4
+  vadd.f32 s9, s5, s5
+  vmov.f32 s11, s4
+  vmla.f32 s2, s2, s7
+  vmla.f32 s7, s3, s12
+  vsub.f32 s11, s3, s3
+  vabs.f32 s4, s9
+  vabs.f32 s15, s6
+  vsub.f32 s7, s4, s15
+  vneg.f32 s6, s1
+  vadd.f32 s10, s11, s12
+  vabs.f32 s3, s15
+  vmla.f32 s11, s3, s15
+  vfma.f32 s3, s6, s10
+  vneg.f32 s5, s8
+  vsub.f32 s13, s6, s4
