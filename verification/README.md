@@ -62,8 +62,20 @@ For a structured diff (handles FLASH_FAILED / GEM5_FAILED statuses, name
 normalization, clear per-test divergence output):
 
 ```bash
+# No-arg: diffs verification/logs/gem5/ento_results.txt (latest sweep)
+# against the committed board baseline at verification/board_reference.txt.
+# Works on any host with the repo checked out — no scp required.
 ./verification/diff_gem5_vs_board.sh
-./verification/diff_gem5_vs_board.sh BOARD_LOG GEM5_LOG   # explicit paths
+
+# Explicit paths, useful for diffing two fresh sweeps on one host:
+./verification/diff_gem5_vs_board.sh <board_log> <gem5_log>
+```
+
+`verification/board_reference.txt` is the committed board baseline. Refresh
+deliberately after a board sweep you've verified:
+```bash
+cp verification/logs/board/ento_results.txt verification/board_reference.txt
+# then update the header comment and commit
 ```
 
 Each sweep also preserves history under

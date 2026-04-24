@@ -4,11 +4,12 @@
 #
 # Usage:
 #   ./verification/diff_gem5_vs_board.sh
-#     Uses verification/logs/{board,gem5}/ento_results.txt symlinks
-#     (which point at the latest run from each sweep script).
+#     Diffs verification/logs/gem5/ento_results.txt (latest sweep)
+#     against verification/board_reference.txt (committed board baseline).
+#     Works on any host that has the repo checked out; no scp needed.
 #
 #   ./verification/diff_gem5_vs_board.sh BOARD_LOG GEM5_LOG
-#     Compares specific files (e.g. after scp'ing a gem5 log back from BRG).
+#     Compares specific files (useful for diffing two fresh sweeps on one host).
 #
 # Exit code is the count of divergent+missing tests, capped at 255 — useful
 # as a health check, but this tool is primarily informational. Nothing is
@@ -17,7 +18,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-BOARD_LOG="${1:-verification/logs/board/ento_results.txt}"
+BOARD_LOG="${1:-verification/board_reference.txt}"
 GEM5_LOG="${2:-verification/logs/gem5/ento_results.txt}"
 
 [[ -f "$BOARD_LOG" ]] || { echo "missing board log: $BOARD_LOG" >&2; exit 2; }
