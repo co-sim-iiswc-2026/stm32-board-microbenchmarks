@@ -58,6 +58,14 @@ Then sweep:
 Outputs: `verification/logs/{board,gem5}/ento_results.txt`. Diff them.
 Each line is `ENTO_RESULT name=<bench> bytes=<hex>`.
 
+For a structured diff (handles FLASH_FAILED / GEM5_FAILED statuses, name
+normalization, clear per-test divergence output):
+
+```bash
+./verification/diff_gem5_vs_board.sh
+./verification/diff_gem5_vs_board.sh BOARD_LOG GEM5_LOG   # explicit paths
+```
+
 Each sweep also preserves history under
 `verification/logs/{board,gem5}/runs/<git-sha>-<utc-timestamp>/`
 (per-run summary + per-test logs). The top-level `ento_results.txt` is a
