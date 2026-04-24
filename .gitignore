@@ -1,7 +1,20 @@
 build-entobench/
 build-gem5/
+build-standalone/
 benchmark_logs/
 benchmark_logs_*/
 benchmark/configs/_tmp_*
 benchmark/entobench_helpers.cmake
 external/gem5/
+
+# macOS noise
+.DS_Store
+**/.DS_Store
+
+# Gem5 run outputs
+m5out*/
+old-m5out/
+
+# Verification sweep outputs (regenerate via sweep scripts)
+verification/logs/
+verification/reference/
