@@ -62,12 +62,12 @@ int main()
 {
   initialise_monitor_handles();
 
-#ifndef GEM5_SIM
+#if !defined(GEM5_SIM) && !defined(QEMU_SIM)
   sys_clk_cfg();
 #endif
   SysTick_Setup();
   __enable_irq();
-#ifndef GEM5_SIM
+#if !defined(GEM5_SIM) && !defined(QEMU_SIM)
   ENTO_BENCH_SETUP();
 #endif
   ENTO_BENCH_PRINT_CONFIG();
