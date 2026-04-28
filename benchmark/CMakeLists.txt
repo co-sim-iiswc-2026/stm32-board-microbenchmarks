@@ -114,6 +114,11 @@ endif()
 add_subdirectory(microbench)
 
 # =============================================================================
+# Build multi-bench harness (additive — doesn't touch microbench/)
+# =============================================================================
+add_subdirectory(multibench)
+
+# =============================================================================
 # Build EntoBench application benchmarks (perception, control, state-est)
 # =============================================================================
 add_subdirectory(${ENTOBENCH_DIR}/benchmark/perception ${CMAKE_BINARY_DIR}/ento-bench-perception)
