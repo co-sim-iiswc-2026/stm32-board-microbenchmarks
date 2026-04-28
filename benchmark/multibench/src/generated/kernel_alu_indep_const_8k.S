@@ -2,7 +2,7 @@
 @ DO NOT EDIT — regenerate via:
 @     python3 benchmark/multibench/tools/gen_kernels.py
 @
-@ Spec source: benchmark/multibench/tools/bench_spec.py
+@ Spec source: benchmark/multibench/tools/bench_spec.yaml
 @ Bench: alu_indep_const_8k
 @ Archetype: mixed
 
