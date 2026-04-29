@@ -36,7 +36,7 @@ extern "C" {
   void kernel_simd_sadd16_8k(void);
   void kernel_simd_smlad_8k(void);
   void kernel_simd_qadd_8k(void);
-  void kernel_wfi_100us(void);
+  void kernel_wfi_systick_1ms(void);
   void kernel_bitmanip_8k(void);
   void kernel_load_streaming_8k(void);
   void kernel_load_random_huge_8k(void);
@@ -63,7 +63,7 @@ inline constexpr std::array<EntoBench::BenchEntry, 19> BENCHES_CORE = {{
     { "simd_sadd16_8k", kernel_simd_sadd16_8k, false, false },
     { "simd_smlad_8k", kernel_simd_smlad_8k, false, false },
     { "simd_qadd_8k", kernel_simd_qadd_8k, false, false },
-    { "wfi_100us", kernel_wfi_100us, false, false },
+    { "wfi_systick_1ms", kernel_wfi_systick_1ms, false, false },
     { "bitmanip_8k", kernel_bitmanip_8k, false, false },
 }};
 

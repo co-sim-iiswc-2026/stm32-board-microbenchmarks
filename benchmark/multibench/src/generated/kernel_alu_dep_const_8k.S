@@ -19,9 +19,6 @@
 kernel_alu_dep_const_8k:
     push {r4-r11, lr}
     movs r4, #0
-    b 9f
-    .ltorg
-9:
     .rept 8192
     adds r4, r4, #1
     .endr

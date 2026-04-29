@@ -22,9 +22,6 @@ kernel_alu_indep_const_8k:
     movs r5, #2
     movs r6, #3
     movs r7, #4
-    b 9f
-    .ltorg
-9:
     .rept 2048
     adds r4, r4, #1
     adds r5, r5, #1

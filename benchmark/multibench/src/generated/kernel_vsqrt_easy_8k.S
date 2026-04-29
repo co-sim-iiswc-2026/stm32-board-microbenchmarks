@@ -18,9 +18,6 @@
 .thumb_func
 kernel_vsqrt_easy_8k:
     vmov.f32 s1, #1.0
-    b 9f
-    .ltorg
-9:
     .rept 4096
     vsqrt.f32 s0, s1
     .endr

@@ -20,9 +20,6 @@ kernel_mull_const_8k:
     push {r4-r11, lr}
     movs r6, #1
     movs r7, #1
-    b 9f
-    .ltorg
-9:
     .rept 4096
     umull r4, r5, r6, r7
     .endr

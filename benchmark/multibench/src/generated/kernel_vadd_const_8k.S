@@ -19,9 +19,6 @@
 kernel_vadd_const_8k:
     vmov.f32 s1, #1.0
     vmov.f32 s2, #2.0
-    b 9f
-    .ltorg
-9:
     .rept 8192
     vadd.f32 s0, s1, s2
     .endr

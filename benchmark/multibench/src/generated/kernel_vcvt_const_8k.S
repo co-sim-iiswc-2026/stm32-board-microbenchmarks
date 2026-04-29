@@ -18,9 +18,6 @@
 .thumb_func
 kernel_vcvt_const_8k:
     vmov.f32 s1, #1.0
-    b 9f
-    .ltorg
-9:
     .rept 8192
     vcvt.s32.f32 s0, s1
     .endr

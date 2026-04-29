@@ -21,9 +21,6 @@ kernel_simd_smlad_8k:
     movs r5, #1
     movs r6, #1
     movs r7, #0
-    b 9f
-    .ltorg
-9:
     .rept 8192
     smlad r4, r5, r6, r7
     .endr

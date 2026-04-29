@@ -20,9 +20,6 @@ kernel_div_const_8k:
     push {r4-r11, lr}
     movs r5, #100
     movs r6, #5
-    b 9f
-    .ltorg
-9:
     .rept 4096
     udiv r4, r5, r6
     .endr

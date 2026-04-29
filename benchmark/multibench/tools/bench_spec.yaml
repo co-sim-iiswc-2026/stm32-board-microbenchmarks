@@ -360,9 +360,14 @@ benches:
   # ====================================================================
   # 6. WFI / sleep  (core partition; HAND-WRITTEN, codegen emits .note stub)
   # ====================================================================
-  - name: wfi_100us
+  # Slot is named for what it actually measures: WFI woken by the existing
+  # SysTick at ~1 ms tick. A true 100 us wake would need a custom timer
+  # pre-armed at 170*100 cycles (deferred to v2). P_floor analysis uses
+  # T_measured from the latency_pin pulse width, so the bench-name lying
+  # about T was the actual hazard, not the measurement.
+  - name: wfi_systick_1ms
     archetype: wfi
-    wake_us: 100
+    wake_us: 1000
     partition: core
 
   # ====================================================================

@@ -20,9 +20,6 @@ kernel_bitmanip_8k:
     push {r4-r11, lr}
     movw r4, #0x5678
     movt r4, #0x1234
-    b 9f
-    .ltorg
-9:
     .rept 1638
     rev   r5, r4
     rbit  r5, r4

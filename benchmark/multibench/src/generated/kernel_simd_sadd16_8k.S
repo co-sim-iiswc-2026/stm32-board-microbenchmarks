@@ -20,9 +20,6 @@ kernel_simd_sadd16_8k:
     push {r4-r11, lr}
     movs r5, #1
     movs r6, #1
-    b 9f
-    .ltorg
-9:
     .rept 8192
     sadd16 r4, r5, r6
     .endr

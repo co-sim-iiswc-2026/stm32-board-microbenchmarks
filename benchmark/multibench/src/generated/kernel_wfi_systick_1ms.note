@@ -1,0 +1,5 @@
+@ kernel_wfi_systick_1ms is HAND-WRITTEN — see notes in
+@ benchmark/multibench/src/generated/kernel_wfi_systick_1ms_handwritten.S.
+@ wake_us=1000
+@ The codegen does NOT replace it; this stub exists only to keep
+@ the generated/ directory consistent across regenerations.

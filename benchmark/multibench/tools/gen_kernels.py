@@ -202,8 +202,9 @@ def emit_rept(b: Bench) -> str:
     # Force the literal pool to flush HERE, before the .rept body, so any
     # `ldr Rd, =sym` in the prologue resolves to a pool entry within ±4 KB.
     # Without this, large rept bodies push the implicit pool past PC-relative
-    # range and gas emits "offset out of range".
-    if prologue:
+    # range and gas emits "offset out of range". Only emit when the prologue
+    # actually contains a `ldr Rd, =...` line (detected by the literal `=`).
+    if any("=" in line for line in prologue):
         # Local label 9 reserved for the pool-flush trampoline so it doesn't
         # collide with loop labels used elsewhere (e.g. art_loop's 1: / 1b).
         lines.append("    b 9f")
@@ -232,7 +233,7 @@ def emit_mixed(b: Bench) -> str:
     for line in pattern_prologue:
         lines.append(f"    {line}")
     # Flush the literal pool before the rept body. See note in emit_rept.
-    if pattern_prologue:
+    if any("=" in line for line in pattern_prologue):
         # Local label 9 reserved for the pool-flush trampoline so it doesn't
         # collide with loop labels used elsewhere (e.g. art_loop's 1: / 1b).
         lines.append("    b 9f")
