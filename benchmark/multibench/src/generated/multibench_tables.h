@@ -33,6 +33,10 @@ extern "C" {
   void kernel_loop_art_1024(void);
   void kernel_loop_art_2048(void);
   void kernel_loop_art_4096(void);
+  void kernel_bp_tight(void);
+  void kernel_bp_long_body(void);
+  void kernel_bp_forward(void);
+  void kernel_bp_alternating(void);
   void kernel_simd_sadd16_8k(void);
   void kernel_simd_smlad_8k(void);
   void kernel_simd_qadd_8k(void);
@@ -44,8 +48,8 @@ extern "C" {
   void kernel_memcpy_8k(void);
 }
 
-// Partition: core  (19 benches)
-inline constexpr std::array<EntoBench::BenchEntry, 19> BENCHES_CORE = {{
+// Partition: core  (23 benches)
+inline constexpr std::array<EntoBench::BenchEntry, 23> BENCHES_CORE = {{
     { "nop_8k", kernel_nop_8k, false, false },
     { "alu_indep_const_8k", kernel_alu_indep_const_8k, false, false },
     { "alu_dep_const_8k", kernel_alu_dep_const_8k, false, false },
@@ -60,6 +64,10 @@ inline constexpr std::array<EntoBench::BenchEntry, 19> BENCHES_CORE = {{
     { "vsqrt_easy_8k", kernel_vsqrt_easy_8k, false, false },
     { "vsqrt_hard_8k", kernel_vsqrt_hard_8k, false, false },
     { "vcvt_const_8k", kernel_vcvt_const_8k, false, false },
+    { "bp_tight", kernel_bp_tight, true, false },
+    { "bp_long_body", kernel_bp_long_body, true, false },
+    { "bp_forward", kernel_bp_forward, false, false },
+    { "bp_alternating", kernel_bp_alternating, true, false },
     { "simd_sadd16_8k", kernel_simd_sadd16_8k, false, false },
     { "simd_smlad_8k", kernel_simd_smlad_8k, false, false },
     { "simd_qadd_8k", kernel_simd_qadd_8k, false, false },

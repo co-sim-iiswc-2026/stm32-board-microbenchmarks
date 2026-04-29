@@ -297,6 +297,47 @@ def emit_art_loop(b: Bench) -> str:
     return "\n".join(lines)
 
 
+def emit_bp_alternating(b: Bench) -> str:
+    """Backward loop with an inner forward conditional whose target depends
+    on iter parity. Pattern (per iteration):
+
+        ands r1, r6, #1   @ Z=1 when counter is even, Z=0 when odd
+        bne 2f            @ taken on odd iters (forward, mispredicted ~50%)
+        nop               @ executed on even iters
+      2:
+        subs r6, r6, #1
+        bne 1b            @ backward, always taken
+
+    5 instructions per iter; ~50% of the inner BNEs mispredict on a static
+    2-bit predictor, exposing the misprediction-energy term.
+    """
+    raw = b.raw
+    iters = int(raw["iters"])
+
+    lines: list[str] = []
+    lines += emit_kernel_header(b.name, b.archetype, b.align)
+    aapcs = "full_int"
+    lines += emit_aapcs(aapcs, prologue=True)
+    if iters <= 0xFF:
+        lines.append(f"    movs r6, #{iters}")
+    elif iters <= 0xFFFF:
+        lines.append(f"    movw r6, #{iters}")
+    else:
+        lines.append(f"    movw r6, #{iters & 0xFFFF}")
+        lines.append(f"    movt r6, #{(iters >> 16) & 0xFFFF}")
+    lines.append("1:")
+    lines.append("    ands r1, r6, #1")
+    lines.append("    bne 2f")
+    lines.append("    nop")
+    lines.append("2:")
+    lines.append("    subs r6, r6, #1")
+    lines.append("    bne 1b")
+    lines += emit_aapcs(aapcs, prologue=False)
+    lines.append(f".size kernel_{b.name}, .-kernel_{b.name}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def emit_random_load(b: Bench) -> str:
     """PRNG-driven LDR sequence over a buffer of `buffer_bytes`. Offsets are
     pre-computed (deterministic for `seed`) and emitted as a `.word` table;
@@ -387,6 +428,8 @@ def emit_kernel(b: Bench) -> tuple[str, str]:
         return f"kernel_{b.name}.S", emit_mixed(b)
     if b.archetype == "art_loop":
         return f"kernel_{b.name}.S", emit_art_loop(b)
+    if b.archetype == "bp_alternating":
+        return f"kernel_{b.name}.S", emit_bp_alternating(b)
     if b.archetype == "random_load":
         return f"kernel_{b.name}.S", emit_random_load(b)
     if b.archetype == "wfi":

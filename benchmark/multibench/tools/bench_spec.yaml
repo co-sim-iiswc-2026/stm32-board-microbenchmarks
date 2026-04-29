@@ -324,6 +324,61 @@ benches:
     partition: memory
 
   # ====================================================================
+  # 4b. Branch-prediction isolation — ported from src/bench_bp_*.S
+  # (core partition; energy regression's branch coefficients).
+  # bp_align and bp_nested deferred to v2 — they characterize the cycle
+  # penalty P for the perf model, not energy.
+  # ====================================================================
+  - name: bp_tight
+    # Tight backward loop: SUBS+BNE, no body. Cost of an always-taken,
+    # well-predicted backward branch. art_loop with body_bytes=4 collapses
+    # to exactly this (0 NOPs, 2-instr body). 8K iters * 2 instr = 16K fetch.
+    archetype: art_loop
+    body_bytes: 4
+    total_fetches: 16384
+    needs_warmup: true
+    partition: core
+
+  - name: bp_long_body
+    # Same SUBS+BNE shape but with 8 NOPs in the loop body. Tests whether
+    # the M4's branch prediction depends on body-length proximity to the
+    # backward branch. Compare per-iter cycle delta with bp_tight.
+    archetype: art_loop
+    body_bytes: 20    # 8 NOPs (16 B) + SUBS (2 B) + BNE (2 B)
+    total_fetches: 16384
+    needs_warmup: true
+    partition: core
+
+  - name: bp_forward
+    # Always-taken forward conditional: CMP r4,r4 (sets Z=1) + BEQ 1f over
+    # 2 NOPs to local label 1:. Compare with bp_tight to isolate forward-vs-
+    # backward direction effect on M4's branch prediction.
+    # `1:` inside .rept is a local numeric label that gas re-defines per
+    # iteration; `beq 1f` resolves to the same iteration's 1: target.
+    archetype: mixed
+    count: 4096   # 4 instr/iter unrolled = 16K fetches
+    pattern_prologue:
+      - "movs r4, #0"
+    pattern:
+      - "cmp r4, r4"
+      - "beq 1f"
+      - "nop"
+      - "nop"
+      - "1:"
+    aapcs: full_int
+    partition: core
+
+  - name: bp_alternating
+    # Forward BEQ inside a backward loop, with target alternating per
+    # iteration (parity of the loop counter). Tests M4's pattern-predictor
+    # behavior — if the predictor uses a 2-bit counter it'll mispredict
+    # ~50% of these. Compare per-iter cycle delta with bp_tight.
+    archetype: bp_alternating
+    iters: 2048   # 5 instr/iter * 2048 = ~10K fetches, ~60us ROI
+    needs_warmup: true
+    partition: core
+
+  # ====================================================================
   # 5. SIMD packed-integer  (core partition)
   # ====================================================================
   - name: simd_sadd16_8k
