@@ -31,6 +31,41 @@ cmake -B build-gem5 -S benchmark \
 cmake --build build-gem5 -j
 ```
 
+**QEMU (qemu-system-arm, for trace-level ground truth without the board):**
+```bash
+cmake -B build-qemu -S benchmark \
+  -DCMAKE_TOOLCHAIN_FILE=external/ento-bench/stm32-cmake/stm32-g474re.cmake \
+  -DQEMU_SIM=ON -DSTM32_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DFETCH_ST_SOURCES=ON \
+  -DMICROBENCH_CONFIG_FILE="configs/microbench_gem5.json"
+cmake --build build-qemu -j --target microbench-all
+```
+
+QEMU mode (`-DQEMU_SIM=ON`) builds the same firmware but with a few
+small ifdef gates so the binary runs cleanly under
+`qemu-system-arm -M olimex-stm32-h405`:
+
+* `sys_clk_cfg()` / cache-enable / `ENTO_BENCH_SETUP()` are skipped —
+  QEMU's Cortex-M4 model doesn't implement the STM32 RCC / FLASH
+  accelerator peripherals, so the board's clock-init code would hang.
+* `start_roi()` / `end_roi()` use `printf("[ROI BEGIN]\n")` /
+  `printf("[ROI END]\n")` instead of gem5's m5op semihosting bkpts
+  (which QEMU rejects with "Unsupported SemiHosting SWI 0x100").
+* DWT cycle counters are not touched (also unsupported on the QEMU
+  machine).
+
+`ENTO_RESULT` still reaches stdout via standard ARM semihosting
+(`SYS_WRITE`), which QEMU handles natively. To run a built ELF:
+
+```bash
+qemu-system-arm -M olimex-stm32-h405 \
+    -kernel build-qemu/bin/bench-tinympc-diff-iter1.elf \
+    -nographic -semihosting-config enable=on,target=native \
+    -monitor none -serial null
+```
+
+The full QEMU-as-reference / per-instruction trace-diff workflow for
+hunting gem5 bugs lives in [`verification/README.md`](verification/README.md).
+
 On the BRG RHEL8 server, source `setup-brg.sh` first to load the ARM toolchain
 module, then `cd benchmark` and use the `--preset stm32-g474re` form (paths
 differ slightly — the preset's relative-path resolution requires running from

@@ -57,6 +57,24 @@ if(GEM5_SEMIHOSTING)
   message(STATUS "gem5 semihosting: GEM5_SEMIHOSTING=1 defined globally for all targets")
 endif()
 
+# QEMU_SIM: lets us run the firmware under qemu-system-arm
+# (e.g. -M olimex-stm32-h405) for ground-truth instruction tracing
+# without the gem5 m5op semihosting bkpts (which QEMU's semihosting
+# handler rejects with "Unsupported SemiHosting SWI 0x100"). Implies:
+#   * skip sys_clk_cfg / cache enable / ENTO_BENCH_SETUP (no real RCC
+#     peripheral on the QEMU model, so accessing it hangs)
+#   * no m5_work_begin / m5_work_end / m5_reset_stats — replaced by
+#     printf("[ROI BEGIN]") / printf("[ROI END]") markers inside
+#     ento-bench/roi.h, which reach the host via SYS_WRITE
+#   * no DWT / cycle-counter access — those peripherals are not
+#     modeled by the olimex-stm32-h405 machine
+# Output (including ENTO_RESULT) reaches stdout via newlib
+# initialise_monitor_handles() → SYS_WRITE, which QEMU handles natively.
+if(QEMU_SIM)
+  add_definitions(-DQEMU_SIM=1)
+  message(STATUS "QEMU mode: QEMU_SIM=1 defined globally for all targets")
+endif()
+
 # CMSIS/HAL target variables (non-H7 path)
 set(CMSIS_FAMILY_TARGET "CMSIS::STM32::${STM_FAMILY}")
 set(CMSIS_TYPE_TARGET   "CMSIS::STM32::${STM_TYPE}")
