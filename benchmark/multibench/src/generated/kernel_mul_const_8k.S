@@ -20,8 +20,14 @@ kernel_mul_const_8k:
     push {r4-r11, lr}
     movs r4, #1
     movs r5, #1
+    movw r12, #10
+8:
+    movs r4, #1
+    movs r5, #1
     .rept 8192
     mul r4, r4, r5
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_mul_const_8k, .-kernel_mul_const_8k

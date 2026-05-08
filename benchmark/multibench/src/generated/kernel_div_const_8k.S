@@ -20,8 +20,14 @@ kernel_div_const_8k:
     push {r4-r11, lr}
     movs r5, #100
     movs r6, #5
+    movw r12, #5
+8:
+    movs r5, #100
+    movs r6, #5
     .rept 4096
     udiv r4, r5, r6
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_div_const_8k, .-kernel_div_const_8k

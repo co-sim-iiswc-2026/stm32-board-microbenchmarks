@@ -20,8 +20,15 @@ kernel_vfma_const_8k:
     vmov.f32 s0, #1.0
     vmov.f32 s1, #1.0
     vmov.f32 s2, #2.0
+    movw r12, #20
+8:
+    vmov.f32 s0, #1.0
+    vmov.f32 s1, #1.0
+    vmov.f32 s2, #2.0
     .rept 8192
     vfma.f32 s0, s1, s2
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_vfma_const_8k, .-kernel_vfma_const_8k

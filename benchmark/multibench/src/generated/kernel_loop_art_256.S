@@ -18,7 +18,7 @@
 .thumb_func
 kernel_loop_art_256:
     push {r4-r11, lr}
-    movs r6, #128
+    movw r6, #1562
 1:
     .rept 126
     nop

@@ -21,6 +21,7 @@ Python 3.11+.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -191,28 +192,46 @@ def emit_rept(b: Bench) -> str:
     raw = b.raw
     instr = raw["instruction"]
     count = int(raw["count"])
+    inner_iters = int(raw.get("inner_iters", 1))
     prologue = raw.get("prologue") or []
     data = raw.get("data")
 
     lines: list[str] = []
     lines += emit_kernel_header(b.name, b.archetype, b.align)
     lines += emit_aapcs(b.aapcs, prologue=True)
-    for line in prologue:
+    has_pool = any("=" in line for line in prologue)
+
+    outer_pro, inner_pro = (
+        _split_prologue_for_inner_loop(prologue, b.aapcs, b.name)
+        if inner_iters > 1
+        else (list(prologue), [])
+    )
+
+    # Outer setup (always runs once). For has_pool, this primes gas's pool.
+    for line in outer_pro:
         lines.append(f"    {line}")
-    # Force the literal pool to flush HERE, before the .rept body, so any
-    # `ldr Rd, =sym` in the prologue resolves to a pool entry within ±4 KB.
-    # Without this, large rept bodies push the implicit pool past PC-relative
-    # range and gas emits "offset out of range". Only emit when the prologue
-    # actually contains a `ldr Rd, =...` line (detected by the literal `=`).
-    if any("=" in line for line in prologue):
-        # Local label 9 reserved for the pool-flush trampoline so it doesn't
-        # collide with loop labels used elsewhere (e.g. art_loop's 1: / 1b).
+    if has_pool:
+        # Local label 9 reserved for the pool-flush trampoline.
         lines.append("    b 9f")
         lines.append("    .ltorg")
         lines.append("9:")
+
+    if inner_iters > 1:
+        # r12 (ip) is caller-saved per AAPCS — no push/pop. Local label 8
+        # reserved for the inner-loop top.
+        lines.append(_emit_inner_iter_setup(inner_iters))
+        lines.append("8:")
+        for line in inner_pro:
+            lines.append(f"    {line}")
+
     lines.append(f"    .rept {count}")
     lines.append(f"    {instr}")
     lines.append("    .endr")
+
+    if inner_iters > 1:
+        lines.append("    subs.w r12, r12, #1")
+        lines.append("    bne 8b")
+
     lines += emit_aapcs(b.aapcs, prologue=False)
     lines.append(f".size kernel_{b.name}, .-kernel_{b.name}")
     lines += emit_data_blocks(data)
@@ -220,9 +239,79 @@ def emit_rept(b: Bench) -> str:
     return "\n".join(lines)
 
 
+def _emit_inner_iter_setup(n: int) -> str:
+    """Load r12 with the inner-loop iteration count.
+
+    `movs` doesn't accept high regs in Thumb-2, so we use `movw` (32-bit
+    encoding, 4 bytes) for any non-zero count. Caps at 0xFFFF — beyond that
+    you'd need a movw/movt pair, which no microbench should require.
+    """
+    if not (1 <= n <= 0xFFFF):
+        raise ValueError(f"inner_iters={n} out of range [1, 0xFFFF]")
+    return f"    movw r12, #{n}"
+
+
+# Stash registers for in-loop pointer reset. We pick high callee-saved regs
+# (r8-r11) so they don't collide with the bench's operand regs (typically
+# r4-r7). full_int aapcs already pushes these, so no extra prologue cost.
+_LDR_EQ_RE = re.compile(r"^\s*ldr\s+(\w+)\s*,\s*=([\w0-9]+)\s*$")
+_STASH_REGS = ["r11", "r10", "r9", "r8"]
+
+
+def _split_prologue_for_inner_loop(
+    prologue: list[str], aapcs: str, bench_name: str,
+) -> tuple[list[str], list[str]]:
+    """Split a prologue into (outer_setup, inner_reset) for inner_iters > 1.
+
+    Each `ldr Rd, =sym` line in the prologue is rewritten so the symbol
+    address is loaded ONCE outside the loop and stashed in a callee-saved
+    register; the inner reset then uses a register-to-register move. This
+    sidesteps the literal-pool ±4 KB range constraint on big rept bodies
+    (e.g. ldm_burst_8k's 8 KB body would push the in-loop pool out of range).
+
+    For minimal aapcs benches the stash regs aren't pushed, so we don't have
+    safe scratch — we skip the inner reset entirely. The body must not
+    permanently mutate prologue-set regs (true for the FPU constant-load
+    benches: vdiv_hard / vsqrt_hard).
+    """
+    has_pool = any("=" in line for line in prologue)
+    if not has_pool:
+        # Plain register sets (movs, vmov.f32 #imm). Re-execute as-is.
+        return prologue, list(prologue)
+
+    if aapcs == "minimal":
+        # No callee-saved scratch available; skip inner reset. The bench
+        # author must ensure the body doesn't permanently mutate the
+        # prologue's operand regs (vdiv_hard etc. only read s1/s2).
+        return prologue, []
+
+    outer: list[str] = []
+    inner: list[str] = []
+    stash_idx = 0
+    for line in prologue:
+        m = _LDR_EQ_RE.match(line.strip())
+        if m:
+            rd, sym = m.group(1), m.group(2)
+            if stash_idx >= len(_STASH_REGS):
+                raise ValueError(
+                    f"{bench_name}: too many `ldr =sym` prologue lines for "
+                    f"stash registers ({_STASH_REGS})"
+                )
+            stash = _STASH_REGS[stash_idx]
+            stash_idx += 1
+            outer.append(f"ldr {rd}, ={sym}")
+            outer.append(f"mov {stash}, {rd}")
+            inner.append(f"mov {rd}, {stash}")
+        else:
+            outer.append(line)
+            inner.append(line)
+    return outer, inner
+
+
 def emit_mixed(b: Bench) -> str:
     raw = b.raw
     count = int(raw["count"])
+    inner_iters = int(raw.get("inner_iters", 1))
     pattern = raw["pattern"]
     pattern_prologue = raw.get("pattern_prologue") or []
     data = raw.get("data")
@@ -230,19 +319,36 @@ def emit_mixed(b: Bench) -> str:
     lines: list[str] = []
     lines += emit_kernel_header(b.name, b.archetype, b.align)
     lines += emit_aapcs(b.aapcs, prologue=True)
-    for line in pattern_prologue:
+    has_pool = any("=" in line for line in pattern_prologue)
+
+    outer_pro, inner_pro = (
+        _split_prologue_for_inner_loop(pattern_prologue, b.aapcs, b.name)
+        if inner_iters > 1
+        else (list(pattern_prologue), [])
+    )
+
+    for line in outer_pro:
         lines.append(f"    {line}")
-    # Flush the literal pool before the rept body. See note in emit_rept.
-    if any("=" in line for line in pattern_prologue):
-        # Local label 9 reserved for the pool-flush trampoline so it doesn't
-        # collide with loop labels used elsewhere (e.g. art_loop's 1: / 1b).
+    if has_pool:
         lines.append("    b 9f")
         lines.append("    .ltorg")
         lines.append("9:")
+
+    if inner_iters > 1:
+        lines.append(_emit_inner_iter_setup(inner_iters))
+        lines.append("8:")
+        for line in inner_pro:
+            lines.append(f"    {line}")
+
     lines.append(f"    .rept {count}")
     for line in pattern:
         lines.append(f"    {line}")
     lines.append("    .endr")
+
+    if inner_iters > 1:
+        lines.append("    subs.w r12, r12, #1")
+        lines.append("    bne 8b")
+
     lines += emit_aapcs(b.aapcs, prologue=False)
     lines.append(f".size kernel_{b.name}, .-kernel_{b.name}")
     lines += emit_data_blocks(data)
@@ -349,6 +455,7 @@ def emit_random_load(b: Bench) -> str:
 
     raw = b.raw
     count = int(raw["count"])
+    inner_iters = int(raw.get("inner_iters", 1))
     buf_bytes = int(raw["buffer_bytes"])
     seed = int(raw.get("seed", 0xDEAD))
     shared = raw.get("shared_buffer_symbol")
@@ -362,20 +469,34 @@ def emit_random_load(b: Bench) -> str:
     lines: list[str] = []
     lines += emit_kernel_header(b.name, b.archetype, b.align)
     lines += emit_aapcs(b.aapcs, prologue=True)
+    # Prime the literal pool from outside the inner loop, then trampoline
+    # so the pool flushes near the function start.
     lines.append(f"    ldr r0, ={buf_sym}")
     lines.append(f"    ldr r1, =random_offsets_{b.name}")
-    lines.append(f"    movw r2, #{count & 0xFFFF}")
-    # Pool flush before the loop so the ldr =sym pair resolves; loop body
-    # is small (4 instructions * `count` iterations) so this is cosmetic
-    # for random_load but kept for parity with emit_rept.
     lines.append("    b 9f")
     lines.append("    .ltorg")
     lines.append("9:")
+
+    if inner_iters > 1:
+        lines.append(_emit_inner_iter_setup(inner_iters))
+        lines.append("8:")
+
+    # Reset r0/r1/r2 every outer iter so the offset walk restarts at the
+    # head of the table (r1 advances via post-inc, r2 decrements). r0 reset
+    # is symmetric / cheap.
+    lines.append(f"    ldr r0, ={buf_sym}")
+    lines.append(f"    ldr r1, =random_offsets_{b.name}")
+    lines.append(f"    movw r2, #{count & 0xFFFF}")
     lines.append("1:")
     lines.append("    ldr r3, [r1], #4")     # next offset
     lines.append("    ldr r4, [r0, r3]")     # dereference
     lines.append("    subs r2, r2, #1")
     lines.append("    bne 1b")
+
+    if inner_iters > 1:
+        lines.append("    subs.w r12, r12, #1")
+        lines.append("    bne 8b")
+
     lines += emit_aapcs(b.aapcs, prologue=False)
     lines.append(f".size kernel_{b.name}, .-kernel_{b.name}")
 

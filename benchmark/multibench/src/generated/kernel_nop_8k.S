@@ -17,8 +17,12 @@
 .type    kernel_nop_8k, %function
 .thumb_func
 kernel_nop_8k:
+    movw r12, #20
+8:
     .rept 8192
     nop
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_nop_8k, .-kernel_nop_8k

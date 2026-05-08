@@ -18,7 +18,8 @@
 .thumb_func
 kernel_bp_tight:
     push {r4-r11, lr}
-    movw r6, #8192
+    movw r6, #34464
+    movt r6, #1
 1:
     .rept 0
     nop

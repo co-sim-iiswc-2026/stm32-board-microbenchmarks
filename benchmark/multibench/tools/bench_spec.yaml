@@ -34,6 +34,10 @@
 #                      vldmia/vstmia decoder bug
 #
 # count chosen for ~50-100 us ROI at 170 MHz (~8K-16K instructions).
+# inner_iters multiplies that to land each ROI at ≥1 ms — needed for
+# 100 kS/s STLINK-V3PWR to capture ≥100 samples per ROI for clean
+# trapezoidal integration. The inner loop uses r12 (caller-saved IP)
+# so no extra push/pop, ~3 cycles per outer iter (negligible vs body).
 
 defaults:
   align: 16
@@ -51,6 +55,7 @@ benches:
     archetype: rept
     instruction: "nop"
     count: 8192
+    inner_iters: 20   # ~50us body * 20 = ~1 ms ROI
     partition: core
     smoke: true
 
@@ -59,6 +64,7 @@ benches:
     # throughput-bound, not latency-bound. Round-robin r4-r7.
     archetype: mixed
     count: 2048  # *4 instr/iter = 8192 total
+    inner_iters: 20
     pattern_prologue:
       - "movs r4, #1"
       - "movs r5, #2"
@@ -77,6 +83,7 @@ benches:
     archetype: rept
     instruction: "adds r4, r4, #1"
     count: 8192
+    inner_iters: 20
     aapcs: full_int
     prologue:
       - "movs r4, #0"
@@ -86,6 +93,7 @@ benches:
     archetype: rept
     instruction: "mul r4, r4, r5"
     count: 8192
+    inner_iters: 10   # ~120us body * 10 = ~1.2 ms ROI
     aapcs: full_int
     prologue:
       - "movs r4, #1"
@@ -98,6 +106,7 @@ benches:
     archetype: rept
     instruction: "umull r4, r5, r6, r7"
     count: 4096
+    inner_iters: 10
     aapcs: full_int
     prologue:
       - "movs r6, #1"
@@ -109,6 +118,7 @@ benches:
     archetype: rept
     instruction: "udiv r4, r5, r6"
     count: 4096
+    inner_iters: 5    # ~300us body * 5 = ~1.5 ms ROI
     aapcs: full_int
     prologue:
       - "movs r5, #100"
@@ -122,6 +132,7 @@ benches:
     archetype: rept
     instruction: "vadd.f32 s0, s1, s2"
     count: 8192
+    inner_iters: 20
     prologue:
       - "vmov.f32 s1, #1.0"
       - "vmov.f32 s2, #2.0"
@@ -131,6 +142,7 @@ benches:
     archetype: rept
     instruction: "vmul.f32 s0, s1, s2"
     count: 8192
+    inner_iters: 10
     prologue:
       - "vmov.f32 s1, #1.0"
       - "vmov.f32 s2, #2.0"
@@ -141,6 +153,7 @@ benches:
     archetype: rept
     instruction: "vfma.f32 s0, s1, s2"
     count: 8192
+    inner_iters: 20
     prologue:
       - "vmov.f32 s0, #1.0"
       - "vmov.f32 s1, #1.0"
@@ -152,6 +165,7 @@ benches:
     archetype: rept
     instruction: "vdiv.f32 s0, s1, s2"
     count: 4096
+    inner_iters: 5
     prologue:
       - "vmov.f32 s1, #1.0"
       - "vmov.f32 s2, #1.0"
@@ -162,6 +176,7 @@ benches:
     archetype: rept
     instruction: "vdiv.f32 s0, s1, s2"
     count: 4096
+    inner_iters: 3    # ~340us body * 3 = ~1 ms
     prologue:
       - "ldr r0, =0x40490FDB"  # pi as float
       - "vmov s1, r0"
@@ -173,6 +188,7 @@ benches:
     archetype: rept
     instruction: "vsqrt.f32 s0, s1"
     count: 4096
+    inner_iters: 5
     prologue:
       - "vmov.f32 s1, #1.0"
     partition: core
@@ -181,6 +197,7 @@ benches:
     archetype: rept
     instruction: "vsqrt.f32 s0, s1"
     count: 4096
+    inner_iters: 3
     prologue:
       - "ldr r0, =0x40490FDB"  # pi
       - "vmov s1, r0"
@@ -190,6 +207,7 @@ benches:
     archetype: rept
     instruction: "vcvt.s32.f32 s0, s1"
     count: 8192
+    inner_iters: 20
     prologue:
       - "vmov.f32 s1, #1.0"
     partition: core
@@ -202,6 +220,7 @@ benches:
     archetype: rept
     instruction: "ldr r4, [r0]"
     count: 8192
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =hot_buffer"
@@ -218,9 +237,12 @@ benches:
     # Shares mem_pool_a with other sequential-stream kernels via the
     # external `mem_pool_a` symbol defined in mem_pool.S — keeps SRAM
     # footprint flat instead of growing linearly with the kernel count.
+    # inner_iters re-runs the prologue each outer iter so r0 resets to
+    # the head of mem_pool_a (post-inc walks past the buffer otherwise).
     archetype: rept
     instruction: "ldr r4, [r0], #4"
     count: 4096
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =mem_pool_a"
@@ -230,6 +252,7 @@ benches:
     archetype: rept
     instruction: "ldr r4, [r0]"
     count: 8192
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =ccm_target"
@@ -245,6 +268,7 @@ benches:
     archetype: rept
     instruction: "str r4, [r0]"
     count: 8192
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =hot_store_buf"
@@ -260,6 +284,7 @@ benches:
     archetype: rept
     instruction: "str r4, [r0], #4"
     count: 4096
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =mem_pool_b"
@@ -273,6 +298,7 @@ benches:
     archetype: rept
     instruction: "ldmia r0!, {r4-r7}"
     count: 2048
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =mem_pool_a"
@@ -284,42 +310,42 @@ benches:
   - name: loop_art_64
     archetype: art_loop
     body_bytes: 64
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
   - name: loop_art_256
     archetype: art_loop
     body_bytes: 256
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
   - name: loop_art_512
     archetype: art_loop
     body_bytes: 512
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
   - name: loop_art_1024
     archetype: art_loop
     body_bytes: 1024
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
   - name: loop_art_2048
     archetype: art_loop
     body_bytes: 2048
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
   - name: loop_art_4096
     archetype: art_loop
     body_bytes: 4096
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: memory
 
@@ -335,7 +361,7 @@ benches:
     # to exactly this (0 NOPs, 2-instr body). 8K iters * 2 instr = 16K fetch.
     archetype: art_loop
     body_bytes: 4
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: core
 
@@ -345,7 +371,7 @@ benches:
     # backward branch. Compare per-iter cycle delta with bp_tight.
     archetype: art_loop
     body_bytes: 20    # 8 NOPs (16 B) + SUBS (2 B) + BNE (2 B)
-    total_fetches: 16384
+    total_fetches: 200000
     needs_warmup: true
     partition: core
 
@@ -357,6 +383,7 @@ benches:
     # iteration; `beq 1f` resolves to the same iteration's 1: target.
     archetype: mixed
     count: 4096   # 4 instr/iter unrolled = 16K fetches
+    inner_iters: 10
     pattern_prologue:
       - "movs r4, #0"
     pattern:
@@ -374,7 +401,7 @@ benches:
     # behavior — if the predictor uses a 2-bit counter it'll mispredict
     # ~50% of these. Compare per-iter cycle delta with bp_tight.
     archetype: bp_alternating
-    iters: 2048   # 5 instr/iter * 2048 = ~10K fetches, ~60us ROI
+    iters: 32768   # 5 instr/iter * 32K = ~160K fetches, ~1 ms ROI
     needs_warmup: true
     partition: core
 
@@ -385,6 +412,7 @@ benches:
     archetype: rept
     instruction: "sadd16 r4, r5, r6"
     count: 8192
+    inner_iters: 20
     aapcs: full_int
     prologue:
       - "movs r5, #1"
@@ -395,6 +423,7 @@ benches:
     archetype: rept
     instruction: "smlad r4, r5, r6, r7"
     count: 8192
+    inner_iters: 20
     aapcs: full_int
     prologue:
       - "movs r5, #1"
@@ -406,6 +435,7 @@ benches:
     archetype: rept
     instruction: "qadd r4, r5, r6"
     count: 8192
+    inner_iters: 20
     aapcs: full_int
     prologue:
       - "movs r5, #1"
@@ -432,6 +462,7 @@ benches:
     # REV/RBIT/CLZ/UBFX/BFI mix — five-line round-robin.
     archetype: mixed
     count: 1638  # 1638*5 ~ 8190 instructions
+    inner_iters: 20
     pattern_prologue:
       - "movw r4, #0x5678"
       - "movt r4, #0x1234"
@@ -454,6 +485,7 @@ benches:
     archetype: rept
     instruction: "ldr r4, [r0], #4"
     count: 8192
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =mem_pool_a"
@@ -468,6 +500,7 @@ benches:
     # is "random over hot pool" vs "sequential over hot pool".
     archetype: random_load
     count: 4096
+    inner_iters: 10
     buffer_bytes: 32768   # buffer footprint -> shared via mem_pool_a
     seed: 0xDEAD
     shared_buffer_symbol: mem_pool_a
@@ -478,6 +511,7 @@ benches:
     archetype: rept
     instruction: "str r4, [r0], #4"
     count: 8192
+    inner_iters: 15
     aapcs: full_int
     prologue:
       - "ldr r0, =mem_pool_b"
@@ -491,6 +525,7 @@ benches:
     # don't alias.
     archetype: mixed
     count: 4096
+    inner_iters: 10
     pattern_prologue:
       - "ldr r0, =mem_pool_a"
       - "ldr r1, =mem_pool_b"

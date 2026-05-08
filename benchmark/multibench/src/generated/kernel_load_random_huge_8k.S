@@ -20,15 +20,21 @@ kernel_load_random_huge_8k:
     push {r4-r11, lr}
     ldr r0, =mem_pool_a
     ldr r1, =random_offsets_load_random_huge_8k
-    movw r2, #4096
     b 9f
     .ltorg
 9:
+    movw r12, #10
+8:
+    ldr r0, =mem_pool_a
+    ldr r1, =random_offsets_load_random_huge_8k
+    movw r2, #4096
 1:
     ldr r3, [r1], #4
     ldr r4, [r0, r3]
     subs r2, r2, #1
     bne 1b
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_load_random_huge_8k, .-kernel_load_random_huge_8k
 

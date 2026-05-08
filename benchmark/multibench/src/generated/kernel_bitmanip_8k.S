@@ -20,6 +20,10 @@ kernel_bitmanip_8k:
     push {r4-r11, lr}
     movw r4, #0x5678
     movt r4, #0x1234
+    movw r12, #20
+8:
+    movw r4, #0x5678
+    movt r4, #0x1234
     .rept 1638
     rev   r5, r4
     rbit  r5, r4
@@ -27,5 +31,7 @@ kernel_bitmanip_8k:
     ubfx  r5, r4, #4, #8
     bfi   r5, r4, #0, #8
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_bitmanip_8k, .-kernel_bitmanip_8k

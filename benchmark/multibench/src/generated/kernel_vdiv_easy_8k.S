@@ -19,8 +19,14 @@
 kernel_vdiv_easy_8k:
     vmov.f32 s1, #1.0
     vmov.f32 s2, #1.0
+    movw r12, #5
+8:
+    vmov.f32 s1, #1.0
+    vmov.f32 s2, #1.0
     .rept 4096
     vdiv.f32 s0, s1, s2
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_vdiv_easy_8k, .-kernel_vdiv_easy_8k

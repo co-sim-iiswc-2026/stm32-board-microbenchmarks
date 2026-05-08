@@ -18,8 +18,13 @@
 .thumb_func
 kernel_vsqrt_easy_8k:
     vmov.f32 s1, #1.0
+    movw r12, #5
+8:
+    vmov.f32 s1, #1.0
     .rept 4096
     vsqrt.f32 s0, s1
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_vsqrt_easy_8k, .-kernel_vsqrt_easy_8k

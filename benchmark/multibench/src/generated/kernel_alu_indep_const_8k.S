@@ -22,11 +22,19 @@ kernel_alu_indep_const_8k:
     movs r5, #2
     movs r6, #3
     movs r7, #4
+    movw r12, #20
+8:
+    movs r4, #1
+    movs r5, #2
+    movs r6, #3
+    movs r7, #4
     .rept 2048
     adds r4, r4, #1
     adds r5, r5, #1
     adds r6, r6, #1
     adds r7, r7, #1
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_alu_indep_const_8k, .-kernel_alu_indep_const_8k

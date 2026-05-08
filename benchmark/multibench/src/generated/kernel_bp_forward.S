@@ -19,6 +19,9 @@
 kernel_bp_forward:
     push {r4-r11, lr}
     movs r4, #0
+    movw r12, #10
+8:
+    movs r4, #0
     .rept 4096
     cmp r4, r4
     beq 1f
@@ -26,5 +29,7 @@ kernel_bp_forward:
     nop
     1:
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_bp_forward, .-kernel_bp_forward

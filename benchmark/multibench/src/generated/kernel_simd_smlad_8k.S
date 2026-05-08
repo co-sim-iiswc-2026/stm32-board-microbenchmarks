@@ -21,8 +21,15 @@ kernel_simd_smlad_8k:
     movs r5, #1
     movs r6, #1
     movs r7, #0
+    movw r12, #20
+8:
+    movs r5, #1
+    movs r6, #1
+    movs r7, #0
     .rept 8192
     smlad r4, r5, r6, r7
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_simd_smlad_8k, .-kernel_simd_smlad_8k

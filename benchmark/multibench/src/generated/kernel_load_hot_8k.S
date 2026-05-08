@@ -19,12 +19,18 @@
 kernel_load_hot_8k:
     push {r4-r11, lr}
     ldr r0, =hot_buffer
+    mov r11, r0
     b 9f
     .ltorg
 9:
+    movw r12, #15
+8:
+    mov r0, r11
     .rept 8192
     ldr r4, [r0]
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_load_hot_8k, .-kernel_load_hot_8k
 

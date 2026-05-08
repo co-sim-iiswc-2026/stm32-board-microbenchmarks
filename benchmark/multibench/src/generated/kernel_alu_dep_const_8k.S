@@ -19,8 +19,13 @@
 kernel_alu_dep_const_8k:
     push {r4-r11, lr}
     movs r4, #0
+    movw r12, #20
+8:
+    movs r4, #0
     .rept 8192
     adds r4, r4, #1
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_alu_dep_const_8k, .-kernel_alu_dep_const_8k

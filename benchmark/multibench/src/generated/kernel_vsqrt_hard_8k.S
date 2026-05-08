@@ -22,8 +22,12 @@ kernel_vsqrt_hard_8k:
     b 9f
     .ltorg
 9:
+    movw r12, #3
+8:
     .rept 4096
     vsqrt.f32 s0, s1
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_vsqrt_hard_8k, .-kernel_vsqrt_hard_8k

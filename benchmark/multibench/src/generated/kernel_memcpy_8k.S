@@ -19,13 +19,21 @@
 kernel_memcpy_8k:
     push {r4-r11, lr}
     ldr r0, =mem_pool_a
+    mov r11, r0
     ldr r1, =mem_pool_b
+    mov r10, r1
     b 9f
     .ltorg
 9:
+    movw r12, #10
+8:
+    mov r0, r11
+    mov r1, r10
     .rept 4096
     ldr r4, [r0], #4
     str r4, [r1], #4
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_memcpy_8k, .-kernel_memcpy_8k

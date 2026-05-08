@@ -19,8 +19,14 @@
 kernel_vmul_const_8k:
     vmov.f32 s1, #1.0
     vmov.f32 s2, #2.0
+    movw r12, #10
+8:
+    vmov.f32 s1, #1.0
+    vmov.f32 s2, #2.0
     .rept 8192
     vmul.f32 s0, s1, s2
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     bx lr
 .size kernel_vmul_const_8k, .-kernel_vmul_const_8k

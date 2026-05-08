@@ -20,8 +20,14 @@ kernel_mull_const_8k:
     push {r4-r11, lr}
     movs r6, #1
     movs r7, #1
+    movw r12, #10
+8:
+    movs r6, #1
+    movs r7, #1
     .rept 4096
     umull r4, r5, r6, r7
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_mull_const_8k, .-kernel_mull_const_8k

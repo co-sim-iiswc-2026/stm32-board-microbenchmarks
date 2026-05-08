@@ -20,8 +20,14 @@ kernel_simd_sadd16_8k:
     push {r4-r11, lr}
     movs r5, #1
     movs r6, #1
+    movw r12, #20
+8:
+    movs r5, #1
+    movs r6, #1
     .rept 8192
     sadd16 r4, r5, r6
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_simd_sadd16_8k, .-kernel_simd_sadd16_8k

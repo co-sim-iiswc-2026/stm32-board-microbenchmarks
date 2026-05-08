@@ -18,7 +18,7 @@
 .thumb_func
 kernel_bp_long_body:
     push {r4-r11, lr}
-    movw r6, #1638
+    movw r6, #20000
 1:
     .rept 8
     nop

@@ -19,12 +19,19 @@
 kernel_store_seq_8k:
     push {r4-r11, lr}
     ldr r0, =mem_pool_b
+    mov r11, r0
     movs r4, #0
     b 9f
     .ltorg
 9:
+    movw r12, #15
+8:
+    mov r0, r11
+    movs r4, #0
     .rept 4096
     str r4, [r0], #4
     .endr
+    subs.w r12, r12, #1
+    bne 8b
     pop {r4-r11, pc}
 .size kernel_store_seq_8k, .-kernel_store_seq_8k

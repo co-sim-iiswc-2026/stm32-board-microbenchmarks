@@ -18,7 +18,7 @@
 .thumb_func
 kernel_bp_alternating:
     push {r4-r11, lr}
-    movw r6, #2048
+    movw r6, #32768
 1:
     ands r1, r6, #1
     bne 2f
