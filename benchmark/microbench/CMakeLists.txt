@@ -22,10 +22,14 @@ if(GEM5_SEMIHOSTING AND NOT GEM5_SIM)
   set(GEM5_SIM ON CACHE BOOL "Implied by GEM5_SEMIHOSTING" FORCE)
 endif()
 
+# Force NoInline kernel policy on every build path so the kernel body
+# sits inside `call_noinline` on board and gem5 — required for byte-
+# identical kernel between ROI markers (board↔gem5 cycle parity).
+add_definitions(-DINLINE_POLICY=1)
+
 if(GEM5_SIM)
   add_definitions(-DGEM5_SIM=1)
-  add_definitions(-DINLINE_POLICY=1)
-  message(STATUS "gem5 simulation mode — peripheral init skipped, NoInline kernel policy")
+  message(STATUS "gem5 simulation mode — peripheral init skipped")
 endif()
 if(GEM5_SEMIHOSTING)
   add_definitions(-DGEM5_SEMIHOSTING=1)
@@ -349,6 +353,22 @@ target_include_directories(bench-inline PRIVATE
 )
 list(APPEND BENCH_TARGETS bench-inline)
 
+# =============================================================================
+# SDIV latency calibration set (subdir)
+# =============================================================================
+# Adds bench-sdiv-cal-* targets and the microbench-sdiv-calibration-all group
+# target.  Appends to BENCH_TARGETS so microbench-all picks them up; also
+# exports SDIV_CAL_TARGETS for the cycle-bench compile-options pass below.
+add_subdirectory(sdiv_calibration)
+
+# =============================================================================
+# FPU-ALU latency calibration set (subdir)
+# =============================================================================
+# Adds bench-fpu-cal-* targets and the microbench-fpu-calibration-all group
+# target.  Appends to BENCH_TARGETS so microbench-all picks them up; also
+# exports FPU_CAL_TARGETS for the cycle-bench compile-options pass below.
+add_subdirectory(fpu_calibration)
+
 # Aggregate build target: everything under microbench/, nothing else.
 # Use this instead of `cmake --build` with no --target to avoid pulling in
 # unrelated (and currently-broken) ento-bench test/benchmark subdirs.
@@ -362,21 +382,61 @@ add_configured_benchmark_group_with_target_configs("microbench"
   CONFIG_FILE "${CMAKE_SOURCE_DIR}/${MICROBENCH_CONFIG_FILE}"
 )
 
-# Force REPS=1, INNER_REPS=1, DO_WARMUP=0 on every diff-style test (capture
-# tests that observe a single point-in-time byte snapshot). Without this, the
-# JSON-driven harness multiplicity (microbench.json: reps=10, inner_reps=5000,
-# do_warmup=true) cascades solver/asm state across calls and breaks per-iter
-# gating — most visibly on TinyMPC, where MAX_ITER=1 silently becomes "many"
-# because the static Solver retains state across the harness's 50001 calls.
-# Using target_compile_options with -U/-D (applied AFTER target_compile_defs
-# from the configured benchmark group) guarantees the override wins.
-# bench-inline is the sole non-diff target here and is intentionally excluded.
-set(DIFF_TARGETS ${BENCH_TARGETS})
-list(REMOVE_ITEM DIFF_TARGETS bench-inline)
-foreach(tgt ${DIFF_TARGETS})
+# Two compile-time override sets — diff-style tests vs cycle benchmarks.
+#
+# Diff-style tests (HANDWRITTEN_BENCHMARKS, TinyMPC iter variants,
+# generated FPU): REPS=1, INNER_REPS=1, DO_WARMUP=0.  These observe a
+# single point-in-time byte snapshot; multi-rep cascades solver/asm
+# state across calls and breaks per-iter gating (most visibly on
+# TinyMPC, where MAX_ITER=1 silently becomes "many" because the static
+# Solver retains state across the harness's 50001 calls).
+#
+# Cycle benchmarks (MICROBENCHMARKS, *_V2, *_FETCH, INLINE_HARNESS):
+# REPS=2, INNER_REPS=1, DO_WARMUP=0.  Reps==1 hits an upstream bug in
+# EntoBench's harness.h — when Reps==1 the per-rep measurement lands
+# in `rep_metrics_` but `print_metrics(metrics_, …)` reads the
+# never-assigned `metrics_` and emits "Cycles = 0".  Bumping to REPS=2
+# routes through the working `Reps > 1` path which calls
+# `print_rep_metrics(rep_metrics_, …)` per iteration.
+#
+# Using target_compile_options with -U/-D (applied AFTER
+# target_compile_defs from the configured benchmark group) guarantees
+# the override wins.
+
+# Cycle-measurement targets — derived from the lists above.
+set(CYCLE_BENCH_TARGETS)
+foreach(bench ${MICROBENCHMARKS} ${MICROBENCHMARKS_V2} ${MICROBENCHMARKS_FETCH})
+    list(APPEND CYCLE_BENCH_TARGETS bench-${bench})
+endforeach()
+list(APPEND CYCLE_BENCH_TARGETS ${INLINE_HARNESS_BENCHMARKS})
+# SDIV calibration targets are also cycle-measurement (REPS=2, DO_WARMUP=0).
+list(APPEND CYCLE_BENCH_TARGETS ${SDIV_CAL_TARGETS})
+# FPU-ALU calibration targets are cycle-measurement too (same compile opts).
+list(APPEND CYCLE_BENCH_TARGETS ${FPU_CAL_TARGETS})
+
+# Diff-style targets — every other benchmark (excluding bench-inline,
+# which has its own ROI placement and stays at JSON defaults).
+set(DIFF_BENCH_TARGETS ${BENCH_TARGETS})
+list(REMOVE_ITEM DIFF_BENCH_TARGETS bench-inline)
+foreach(tgt ${CYCLE_BENCH_TARGETS})
+    list(REMOVE_ITEM DIFF_BENCH_TARGETS ${tgt})
+endforeach()
+
+foreach(tgt ${DIFF_BENCH_TARGETS})
     target_compile_options(${tgt} PRIVATE
       -UINNER_REPS -DINNER_REPS=1
       -UREPS        -DREPS=1
+      -UDO_WARMUP   -DDO_WARMUP=0
+    )
+endforeach()
+
+foreach(tgt ${CYCLE_BENCH_TARGETS})
+    # INNER_REPS comes from the JSON config (microbench{,_gem5}.json:
+    # inner_reps).  REPS=2 is forced to dodge the upstream Reps==1
+    # print bug; DO_WARMUP=0 is forced so the first ROI is the measured
+    # one (run_m5op_bench.py defaults to --roi-counter 0).
+    target_compile_options(${tgt} PRIVATE
+      -UREPS        -DREPS=2
       -UDO_WARMUP   -DDO_WARMUP=0
     )
 endforeach()

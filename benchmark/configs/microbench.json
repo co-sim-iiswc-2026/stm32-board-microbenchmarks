@@ -1,7 +1,7 @@
 {
     "microbench": {
-        "reps": 10,
-        "inner_reps": 5000,
+        "reps": 1,
+        "inner_reps": 100,
         "verbosity": 1,
         "do_warmup": true,
         "enable_caches": true,

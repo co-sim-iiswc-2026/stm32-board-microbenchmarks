@@ -1,9 +1,9 @@
 {
     "microbench": {
         "reps": 1,
-        "inner_reps": 1,
+        "inner_reps": 100,
         "verbosity": 1,
-        "do_warmup": false,
+        "do_warmup": true,
         "enable_caches": true,
         "enable_prefetch": true
     }

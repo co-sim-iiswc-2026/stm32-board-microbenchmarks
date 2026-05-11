@@ -10,6 +10,8 @@
 #include "kernels_inline.h"
 #include "kernels_v2_inline.h"
 #include "kernels_fetch_char.h"
+#include "sdiv_calibration/kernels.h"
+#include "fpu_calibration/kernels.h"
 
 #define XSTR(x) #x
 #define STR(x) XSTR(x)

@@ -1,6 +1,7 @@
 build-entobench/
 build-gem5/
 build-standalone/
+build-*/
 benchmark_logs/
 benchmark_logs_*/
 benchmark/configs/_tmp_*
