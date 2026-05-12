@@ -1,20 +1,48 @@
 # stm32-board-microbenchmarks
 
-Microbenchmark and differential-testing infrastructure for the STM32G474RE
-(Cortex-M4 + VFPv4-SP) board and Zhantong's gem5 cortex-m fork. Built on top
-of the `ento-bench` harness (submodule at `external/ento-bench`).
+Microbenchmark and differential-testing infrastructure for the
+STM32G474RE (Cortex-M4 + VFPv4-SP) board and Zhantong's gem5 cortex-m
+fork. Two independent subprojects, plus diff-testing glue.
 
 ## Repo layout
 
 | Path | What's in it |
 |---|---|
-| `src/*.S` | Assembly-only microbenchmarks (NOP, ALU, FPU, branch, cache, etc.) — original cycle-measurement suite. Built via root `CMakeLists.txt`. |
-| `benchmark/` | C++ benchmark suite using the EntoBench harness. Entry point: `benchmark/CMakeLists.txt` + `benchmark/CMakePresets.json`. Contains `microbench/`, `configs/`, `scripts/`. |
-| `benchmark/microbench/` | Microbenchmark targets. Two categories: **cycle benchmarks** (`bench-<name>` via `microbench_main.cc`, JSON-configured via `configs/microbench.json`), and **diff benchmarks** (`bench-<name>` for hand-written, `bench-fpu-<...>` for generated; both built on `CaptureProblem`, used for board↔gem5 differential testing). |
-| `verification/` | Differential-testing framework: diff-test generators, board/gem5 sweep scripts, logs. See [`verification/README.md`](verification/README.md) for details. |
-| `external/ento-bench/` | EntoBench submodule — provides the Harness, Problem base classes, ROI macros, and the `CaptureProblem<Derived, N>` primitive used by diff tests. |
+| [`microbenchmark/`](microbenchmark/) | **Low-overhead Cortex-M4 cycle harness.** Standalone CMake project — one cold warmup + `INNER_REPS` measured calls bracketed by DWT_CYCCNT snaps (hardware) or `m5_work_begin`/`m5_work_end` pairs (gem5). Same kernel source builds for both targets via a `PLATFORM={gem5,hardware}` + `BOARD={stm32g474re,...}` switch. Per-board resources (linker script, openocd target cfg, I/D-cache sizes, board headers) live in [`microbenchmark/board/<board>/`](microbenchmark/board/); a post-link guard fails the build when a kernel exceeds the target's I-cache or D-cache. See [`microbenchmark/README.md`](microbenchmark/README.md). |
+| [`benchmark/`](benchmark/) | **C++ benchmark suite using the EntoBench harness.** Entry point: [`benchmark/CMakeLists.txt`](benchmark/CMakeLists.txt) + [`benchmark/CMakePresets.json`](benchmark/CMakePresets.json). Contains `microbench/`, `multibench/`, `configs/`, `scripts/`. Two categories of targets: **cycle benchmarks** (`bench-<name>` via `microbench_main.cc`, JSON-configured via `configs/microbench*.json`), and **diff benchmarks** (`bench-<name>` for hand-written, `bench-fpu-<...>` for generated; both built on `CaptureProblem`, used for board↔gem5 differential testing). |
+| [`verification/`](verification/) | **Differential-testing framework** — diff-test generators, board/gem5 sweep scripts, logs. See [`verification/README.md`](verification/README.md). |
+| [`external/ento-bench/`](external/ento-bench/) | **EntoBench submodule** — provides the Harness, Problem base classes, ROI macros, and the `CaptureProblem<Derived, N>` primitive used by diff tests. |
 
-## Build
+## microbenchmark/ — quick start
+
+The smaller, newer subproject. Pure cycle measurement for one kernel
+at a time, with cross-build byte-identity invariants so gem5↔hardware
+comparisons are well-defined.
+
+```bash
+cd microbenchmark
+cmake --preset hw-stm32g474re && cmake --build build/hw-stm32g474re -j4
+python3 ./test/test_board_run.py
+```
+
+Presets follow the `<platform>[-<variant>]-<board>` convention:
+
+| Preset | Platform | Board | Flash accelerators |
+|---|---|---|---|
+| `gem5-stm32g474re`           | gem5     | stm32g474re | n/a (configured in gem5 invocation) |
+| `hw-stm32g474re`             | hardware | stm32g474re | I-cache + D-cache + prefetch all on |
+| `hw-nocache-stm32g474re`     | hardware | stm32g474re | caches off, prefetch on |
+| `hw-noprefetch-stm32g474re`  | hardware | stm32g474re | caches on, prefetch off |
+| `hw-none-stm32g474re`        | hardware | stm32g474re | all off |
+
+Full docs (memory layout, ROI design, byte-identity invariants,
+I/D-cache size guards, adding a new kernel or board):
+[`microbenchmark/README.md`](microbenchmark/README.md).
+
+## benchmark/ — quick start
+
+The original EntoBench-based suite (C++, `CaptureProblem`-driven,
+shared with the differential-testing workflow).
 
 **Board (STM32G474RE):**
 ```bash
@@ -31,7 +59,8 @@ cmake -B build-gem5 -S benchmark \
 cmake --build build-gem5 -j
 ```
 
-**QEMU (qemu-system-arm, for trace-level ground truth without the board):**
+**QEMU (qemu-system-arm, for trace-level ground truth without the
+board):**
 ```bash
 cmake -B build-qemu -S benchmark \
   -DCMAKE_TOOLCHAIN_FILE=external/ento-bench/stm32-cmake/stm32-g474re.cmake \
@@ -66,29 +95,33 @@ qemu-system-arm -M olimex-stm32-h405 \
 The full QEMU-as-reference / per-instruction trace-diff workflow for
 hunting gem5 bugs lives in [`verification/README.md`](verification/README.md).
 
-On the BRG RHEL8 server, source `setup-brg.sh` first to load the ARM toolchain
-module, then `cd benchmark` and use the `--preset stm32-g474re` form (paths
-differ slightly — the preset's relative-path resolution requires running from
-inside `benchmark/`).
+On the BRG RHEL8 server, source `setup-brg.sh` first to load the ARM
+toolchain module, then `cd benchmark` and use the `--preset
+stm32-g474re` form (paths differ slightly — the preset's relative-path
+resolution requires running from inside `benchmark/`).
 
-## Flashing and running on the board
+### Flashing and running on the board
 
-Per-benchmark flash-and-log targets are generated when OpenOCD is available:
+Per-benchmark flash-and-log targets are generated when OpenOCD is
+available:
 ```bash
-make -C build-entobench stm32-flash-bench-nop-semihosted         # single bench
-./verification/sweep_fpu_board.sh                                # all diff tests
+make -C build-entobench stm32-flash-bench-nop-semihosted   # single bench
+./verification/sweep_fpu_board.sh                          # all diff tests
 ```
 
-Gem5 workflow is documented in [`verification/README.md`](verification/README.md).
+Gem5 workflow is documented in
+[`verification/README.md`](verification/README.md).
 
-## Testing changes
+### Differential testing
 
 The `CaptureProblem`-based tests under `benchmark/microbench/bench_*.cc`
-(plus `generated/bench_fpu_*.cc`) each produce one `ENTO_RESULT name=<name> bytes=<hex>`
-line of semihosting output. Board sweep captures these into
-`verification/logs/board/ento_results.txt`
-as the trusted reference. The gem5 sweep produces the same format; `diff`
-the two files to find divergences.
+(plus `generated/bench_fpu_*.cc`) each produce one
+`ENTO_RESULT name=<name> bytes=<hex>` line of semihosting output. The
+board sweep captures these into
+`verification/logs/board/ento_results.txt` as the trusted reference.
+The gem5 sweep produces the same format; `diff` the two files to find
+divergences.
 
-See [`verification/README.md`](verification/README.md) for the differential-testing
-workflow and the ongoing gem5 FPU bug hunt context.
+See [`verification/README.md`](verification/README.md) for the
+differential-testing workflow and the ongoing gem5 FPU bug-hunt
+context.

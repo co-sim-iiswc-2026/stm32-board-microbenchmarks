@@ -1,0 +1,71 @@
+{
+    "version": 4,
+    "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+    "configurePresets": [
+        {
+            "name": "_arm_base",
+            "hidden": true,
+            "toolchainFile": "${sourceDir}/arm-none-eabi.cmake",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gem5-stm32g474re",
+            "inherits": "_arm_base",
+            "binaryDir": "${sourceDir}/build/gem5-stm32g474re",
+            "cacheVariables": {
+                "PLATFORM": "gem5",
+                "BOARD": "stm32g474re"
+            }
+        },
+        {
+            "name": "hw-stm32g474re",
+            "inherits": "_arm_base",
+            "binaryDir": "${sourceDir}/build/hw-stm32g474re",
+            "cacheVariables": {
+                "PLATFORM": "hardware",
+                "BOARD": "stm32g474re",
+                "HW_VARIANT": "full"
+            }
+        },
+        {
+            "name": "hw-nocache-stm32g474re",
+            "inherits": "_arm_base",
+            "binaryDir": "${sourceDir}/build/hw-nocache-stm32g474re",
+            "cacheVariables": {
+                "PLATFORM": "hardware",
+                "BOARD": "stm32g474re",
+                "HW_VARIANT": "nocache"
+            }
+        },
+        {
+            "name": "hw-noprefetch-stm32g474re",
+            "inherits": "_arm_base",
+            "binaryDir": "${sourceDir}/build/hw-noprefetch-stm32g474re",
+            "cacheVariables": {
+                "PLATFORM": "hardware",
+                "BOARD": "stm32g474re",
+                "HW_VARIANT": "noprefetch"
+            }
+        },
+        {
+            "name": "hw-none-stm32g474re",
+            "inherits": "_arm_base",
+            "binaryDir": "${sourceDir}/build/hw-none-stm32g474re",
+            "cacheVariables": {
+                "PLATFORM": "hardware",
+                "BOARD": "stm32g474re",
+                "HW_VARIANT": "none"
+            }
+        }
+    ],
+    "buildPresets": [
+        { "name": "gem5-stm32g474re",          "configurePreset": "gem5-stm32g474re" },
+        { "name": "hw-stm32g474re",            "configurePreset": "hw-stm32g474re" },
+        { "name": "hw-nocache-stm32g474re",    "configurePreset": "hw-nocache-stm32g474re" },
+        { "name": "hw-noprefetch-stm32g474re", "configurePreset": "hw-noprefetch-stm32g474re" },
+        { "name": "hw-none-stm32g474re",       "configurePreset": "hw-none-stm32g474re" }
+    ]
+}

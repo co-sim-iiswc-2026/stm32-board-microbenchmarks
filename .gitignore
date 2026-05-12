@@ -2,11 +2,15 @@ build-entobench/
 build-gem5/
 build-standalone/
 build-*/
+microbenchmark/build
+microbenchmark/test/disasm/
+microbenchmark/test/logs/
 benchmark_logs/
 benchmark_logs_*/
 benchmark/configs/_tmp_*
 benchmark/entobench_helpers.cmake
 external/gem5/
+**__pycache__**
 
 # macOS noise
 .DS_Store
