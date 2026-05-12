@@ -15,27 +15,52 @@
  * On hardware the snap pair is two `ldr [DWT_CYCCNT]` reads; on gem5
  * it is `m5_work_begin` / `m5_work_end` BKPT pairs.
  *
- * Section layout inside `.bench_kernel`:
+ * Three pinned flash regions (see board/<board>/<board>.ld):
  *
- *   .bench_prologue        ; variable size, untimed setup (e.g. load
- *                          ; DWT_CYCCNT address into r0 on hardware).
- *   (linker FILLs with NOPs to offset 0x70)
- *   .bench_prologue_snap   ; exactly 16 bytes of NOPs — pure filler,
- *                          ; no instrumentation. Kept to satisfy the
- *                          ; linker's 16-byte slot ASSERT and to pin
- *                          ; `_bench_body_start` at offset 0x80.
- *   .bench_body            ; warmup + INNER_REPS measured reps. Starts
- *                          ; at offset 0x80 (= flash 0x08000480).
- *   .bench_epilogue        ; bx lr
+ *   0x08000400  .bench_kernel        — the bench_entry wrapper:
+ *                 .bench_prologue        untimed setup (DWT_CYCCNT addr)
+ *                 .bench_prologue_snap   16-byte NOP filler
+ *                 .bench_body            warmup + INNER_REPS measured reps
+ *                 .bench_epilogue        bx lr
+ *               _bench_body_start = 0x08000480 (= prologue + 0x80)
  *
- * Register contract for hardware kernels:
- *   - The harness reserves r0 (holds DWT_CYCCNT address) and r4 (holds
- *     start CYCCNT) across each rep's measured call. Kernel bodies
- *     that need these MUST save/restore them. For pure-NOP /
- *     register-free kernels there's no constraint.
+ *   0x08001000  .text.kernel_body    — `kernel_body` (the user's code),
+ *                                       pinned at the same flash address
+ *                                       in every build. Slot size matches
+ *                                       the board's I-cache.
  *
- * gem5 kernels have no register contract — every rep reloads r0/r1
- * from scratch around the bkpt.
+ *   0x08001400  .rodata.kernel_data  — kernel-declared flash data
+ *                                       (.rodata.kernel_data[*] input
+ *                                       sections), bracketed by linker
+ *                                       sentinels __kernel_data_start /
+ *                                       __kernel_data_end. Slot size
+ *                                       matches the board's D-cache.
+ *
+ * Register contract — registers the harness keeps live across each
+ * measured `bl kernel_body`. The kernel must leave these unchanged on
+ * return (or push/pop them itself):
+ *
+ *   Hardware (PLATFORM_HARDWARE):
+ *     r0 — DWT_CYCCNT address  (used by per-rep `ldr rN, [r0]` snaps)
+ *     r3 — &_inner_delta_cyc[] (post-incremented after each rep)
+ *     r4 — start CYCCNT value  (read back for `subs r1, r1, r4`)
+ *     r5 — remaining rep count (decremented after each rep)
+ *
+ *   gem5 (PLATFORM_GEM5):
+ *     r5 — remaining rep count (r0/r1 are reloaded around every bkpt)
+ *
+ * Most of those are already callee-saved per AAPCS (r4-r11), so an
+ * AAPCS-compliant kernel preserves r4 and r5 for free. The two
+ * registers that need EXTRA discipline beyond AAPCS — because they're
+ * caller-saved but the harness still relies on them across the bl —
+ * are r0 and r3 on hardware. r1, r2, r6-r11, r12 are not used by the
+ * harness across the call, so the kernel is free to clobber r1, r2,
+ * r12 (caller-saved) and to use r6-r11 with the usual AAPCS push/pop.
+ *
+ * For kernels meant to build for both platforms from the same source,
+ * the safest rule is: don't touch r0, r3, r4, r5 — treat them as
+ * harness-reserved on every target. lr and sp are managed by the
+ * harness; do not touch.
  *
  * Include this once at the top of a kernel .S file. The file must be
  * compiled with -x assembler-with-cpp so the #ifdef branches work.
@@ -183,10 +208,16 @@
      *         .endr
      *     END_BENCH
      *
-     * AAPCS register contract: kernel body is a function callee.
-     *   - free to clobber: r0-r3, r12 (caller-saved)
-     *   - must preserve:   r4-r11 (callee-saved)
-     *   - lr, sp:          managed by the harness; do not touch
+     * Register contract: kernel body is a function callee that returns
+     * to the harness; the harness keeps live state across each
+     * measured `bl`. See the top-of-file docblock for the full table.
+     * Quick summary:
+     *   - harness-reserved across `bl` (don't touch):
+     *       hardware: r0, r3, r4, r5
+     *       gem5:     r5
+     *   - AAPCS callee-saved (preserve if used): r4-r11
+     *   - freely clobberable scratch on both: r1, r2, r12
+     *   - lr, sp: managed by the harness; do not touch
      *   - DO NOT emit `bx lr` — END_BENCH does it for you.
      *
      * Body must fit in the target board's I-cache for the warmup to

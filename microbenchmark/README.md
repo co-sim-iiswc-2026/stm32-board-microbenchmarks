@@ -64,25 +64,44 @@ of `bl/bx`/snap framing.
 
 ## How it works
 
-### Memory layout — what `.bench_kernel` is doing
+### Memory layout — the three pinned flash regions
 
 The linker script
 ([board/stm32g474re/stm32g474re.ld](board/stm32g474re/stm32g474re.ld))
-carves a special section called `.bench_kernel`, pinned at `FLASH +
-0x400`:
+pins three regions of flash to fixed addresses across every build
+(gem5 + all 4 hardware variants):
 
 ```
-0x08000000   .isr_vector            (vector table, ≤ 0x400 bytes)
-0x08000400   .bench_kernel          ┐
-  0x08000400   bench_entry:         │ .bench_prologue       — setup (untimed)
-  0x08000470 .bench_prologue_snap   │ 16-byte filler slot (no instrumentation)
-  0x08000480   _bench_body_start    │ .bench_body            — warmup + N-rep loop
-  ...        _bench_body_end        │                          (push, bl, per-rep
-                                    │                          snap pair, pop)
-             .bench_epilogue        │ bx lr
-0x08000???   .text                  ┘ Reset_Handler, main, helpers, AND
-                                      `kernel_body` (your kernel body)
+0x08000000   .isr_vector              (vector table, 64 bytes)
+0x08000400   .bench_kernel            ┐  ≤ 0xc00 bytes; bench_entry wrapper
+  0x08000400   bench_entry:           │    .bench_prologue   — setup (untimed)
+  0x08000470 .bench_prologue_snap     │    16-byte filler slot (no instrumentation)
+  0x08000480   _bench_body_start      │    .bench_body       — warmup + N-rep loop
+             _bench_body_end          │
+             .bench_epilogue          │    bx lr
+                                      ┘
+0x08001000   .text.kernel_body        ← 1 KiB reserved (= ICACHE_SIZE_BYTES);
+             kernel_body              ←   your kernel body lives HERE
+0x08001400   .rodata.kernel_data      ← 256 B reserved (= DCACHE_SIZE_BYTES);
+             __kernel_data_start      ←   flash data the kernel opts into
+             __kernel_data_end        ←
+0x08001500+  .text                    ← everything else: Reset_Handler, main,
+                                          system_init, flash_config, helpers …
 ```
+
+The two new pins are **`kernel_body`** at `0x08001000` and
+**`__kernel_data_start`** at `0x08001400`. Because they're at the same
+address in every build, the I/D-cache set indices the kernel touches
+are identical between gem5 and hardware — when you compare cycle
+counts across builds, only the cache/prefetch policy differs, not the
+addresses being cached.
+
+The reserved slot sizes match this board's cache geometry (1 KiB
+I-cache, 256 B D-cache from
+[board/stm32g474re/board.cmake](board/stm32g474re/board.cmake)). Going
+over the limit is caught twice: by a linker `ASSERT` (link-time) and
+by [scripts/check_kernel_size.py](scripts/check_kernel_size.py)
+(post-link, with the `-DALLOW_KERNEL_EXCEED_{I,D}CACHE=ON` overrides).
 
 Pinned by `.bench_kernel`:
 
@@ -99,20 +118,18 @@ Pinned by `.bench_kernel`:
 - **`_bench_body_start`** at `0x08000480` — start of the harness
   measurement body.
 
-Your kernel's actual instruction sequence (`kernel_body`) is
-**not** in `.bench_kernel`. The `BENCH` macro emits it into
-`.text.kernel_body`, which the linker places within regular `.text`.
-The pinning point isn't to pin your code — it's to keep the
-**measurement instructions** (snap ldrs / m5op bkpts and the bls into
-the kernel) at byte-identical addresses across builds. That eliminates
-cache-line crossings, branch-target alignment, and flash-line
-straddling from the comparison, so when you flip `FLASH->ACR` bits
-between variants the only thing that changes is cache/prefetch
-behavior, not the address of any instruction.
+The `BENCH` macro emits the kernel into an input section
+`.text.kernel_body`; the linker `KEEP()`s that into the pinned
+`.text.kernel_body` output section at `0x08001000` (1 KiB-aligned, so
+`kernel_body` lands exactly at `0x08001000`). The wrapper-bytes
+identity (verified across the 4 hardware variants) and the kernel-body
+identity (verified across all 5 builds) together mean every measured
+instruction lives at the same flash address with the same encoding —
+exactly what cross-target cycle comparisons need.
 
-The linker script's `MEMORY`, `_estack`, `_Min_Heap_Size`, and
-`_Min_Stack_Size` declarations are byte-identical to entobench's
-generated `G474RE.ld` for STM32G474RE — only `.bench_kernel` is added.
+The `MEMORY`, `_estack`, `_Min_Heap_Size`, and `_Min_Stack_Size`
+declarations match entobench's generated `G474RE.ld` for STM32G474RE;
+only the three pinned sections above are added.
 
 ### Warmup + measurement flow
 
@@ -160,12 +177,14 @@ offset 0x70 is 16 bytes of NOPs (no instrumentation there).
 Between the start-snap `ldr` and the end-snap `ldr` of any one rep the
 CPU executes exactly:
 
-| instruction | cycles on Cortex-M4 |
-|---|---|
-| `bl kernel_body` | **1 + P** — direct branch, PC-relative immediate. Prefetcher predicts the target; P ≈ 1. → ~2 cycles. |
-| `<kernel body>` | N cycles (your instructions). |
-| `bx lr` (inside `kernel_body`, emitted by `END_BENCH`) | **1 + P** — indirect branch, target in a register. No early speculation; P ≈ 2. → ~3 cycles. |
-| inter-ldr sampling distance | the cycles between the two `ldr [DWT_CYCCNT]` sampling phases. Inherent ~1 cycle. |
+
+| instruction                                            | cycles on Cortex-M4                                                                                   |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `bl kernel_body`                                       | **1 + P** — direct branch, PC-relative immediate. Prefetcher predicts the target; P ≈ 1. → ~2 cycles. |
+| `<kernel body>`                                        | N cycles (your instructions).                                                                         |
+| `bx lr` (inside `kernel_body`, emitted by `END_BENCH`) | **1 + P** — indirect branch, target in a register. No early speculation; P ≈ 2. → ~3 cycles.          |
+| inter-ldr sampling distance                            | the cycles between the two `ldr [DWT_CYCCNT]` sampling phases. Inherent ~1 cycle.                     |
+
 
 Total framing = `bl + bx + ldr-distance ≈ 6 cycles`. So `inner = N + 6`
 on hardware, where N is your kernel body's cycle count. For the
@@ -201,38 +220,40 @@ is pinned at `0x08000400` in both, so the measurement scaffolding sits
 at the same flash address regardless of build. What differs is the
 *instrumentation instructions* inside the wrapper.
 
-| aspect | hardware (`hardware*` preset) | gem5 (`gem5` preset) |
-|---|---|---|
-| `bench_entry` address | pinned at `0x08000400` | pinned at `0x08000400` (same) |
-| `_bench_body_start` address | pinned at `0x08000480` | pinned at `0x08000480` (same) |
-| `kernel_body` bytes | byte-identical across all 4 hardware variants | byte-identical to hardware — same source, same compiler |
-| 16-byte filler slot at offset 0x70 | `8 × nop` — no instrumentation | `8 × nop` — no instrumentation |
-| Per-rep start instrumentation | `ldr r4, [DWT_CYCCNT]` — start snap | `mov.w r0, #0x100; movw/movt r1, &m5_pb_begin; bkpt #0xab` → `m5_work_begin` |
-| Per-rep end instrumentation | `ldr r1, [DWT_CYCCNT]; subs r1,r1,r4; str r1,[r3],#4` → `_inner_delta_cyc[i]` | `mov.w r0, #0x100; movw/movt r1, &m5_pb_end; bkpt #0xab` → `m5_work_end` |
-| Around the warmup call | **no instrumentation** | **no instrumentation** — `m5_work_begin` fires only after the warmup returns |
-| Reported cycle counts | semihosting: one `MICROBENCH name=<bench> rep=<i> inner=<N>` line per rep | semihosting: a single `MICROBENCH name=<bench>` marker; per-rep cycles come from gem5's stat machinery (one work region per rep) |
-| Framing inside the measurement | `bl + bx lr + ldr-distance ≈ 6 cycles` | `bl + bx lr + 3 setup instr before m5_work_end's bkpt ≈ 8 cycles` |
-| One-time chip init | `system_init()` configures PLL → 170 MHz, sets `FLASH->ACR`, enables DWT | `system_init()` skips PLL/FLASH writes (gem5 doesn't model them); FPU enable still runs |
+
+| aspect                             | hardware (`hardware`* preset)                                                 | gem5 (`gem5` preset)                                                                                                             |
+| ---------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `bench_entry` address              | pinned at `0x08000400`                                                        | pinned at `0x08000400` (same)                                                                                                    |
+| `_bench_body_start` address        | pinned at `0x08000480`                                                        | pinned at `0x08000480` (same)                                                                                                    |
+| `kernel_body` bytes                | byte-identical across all 4 hardware variants                                 | byte-identical to hardware — same source, same compiler                                                                          |
+| 16-byte filler slot at offset 0x70 | `8 × nop` — no instrumentation                                                | `8 × nop` — no instrumentation                                                                                                   |
+| Per-rep start instrumentation      | `ldr r4, [DWT_CYCCNT]` — start snap                                           | `mov.w r0, #0x100; movw/movt r1, &m5_pb_begin; bkpt #0xab` → `m5_work_begin`                                                     |
+| Per-rep end instrumentation        | `ldr r1, [DWT_CYCCNT]; subs r1,r1,r4; str r1,[r3],#4` → `_inner_delta_cyc[i]` | `mov.w r0, #0x100; movw/movt r1, &m5_pb_end; bkpt #0xab` → `m5_work_end`                                                         |
+| Around the warmup call             | **no instrumentation**                                                        | **no instrumentation** — `m5_work_begin` fires only after the warmup returns                                                     |
+| Reported cycle counts              | semihosting: one `MICROBENCH name=<bench> rep=<i> inner=<N>` line per rep     | semihosting: a single `MICROBENCH name=<bench>` marker; per-rep cycles come from gem5's stat machinery (one work region per rep) |
+| Framing inside the measurement     | `bl + bx lr + ldr-distance ≈ 6 cycles`                                        | `bl + bx lr + 3 setup instr before m5_work_end's bkpt ≈ 8 cycles`                                                                |
+| One-time chip init                 | `system_init()` configures PLL → 170 MHz, sets `FLASH->ACR`, enables DWT      | `system_init()` skips PLL/FLASH writes (gem5 doesn't model them); FPU enable still runs                                          |
+
 
 What you can rely on being identical across all targets:
 
 - `kernel_body`'s bytes (your kernel) — verified by
-  `test_layout_identical.py` to hash to the same SHA-256 across all 5
-  builds (gem5 + 4 hardware). This is what makes the cross-target
-  comparison valid.
+`test_layout_identical.py` to hash to the same SHA-256 across all 5
+builds (gem5 + 4 hardware). This is what makes the cross-target
+comparison valid.
 - The address of `bench_entry` and `_bench_body_start` — pinned in
-  both.
+both.
 - Both targets call the kernel exactly `1 + INNER_REPS` times — one
-  warmup, then INNER_REPS measured reps. Both wrap *only* the measured
-  reps in instrumentation; the warmup runs naked.
+warmup, then INNER_REPS measured reps. Both wrap *only* the measured
+reps in instrumentation; the warmup runs naked.
 
 What differs and matters for interpretation:
 
 - gem5's reported cycles ≈ hardware's `inner` + ~2 cycles, because
-  m5_work_end's 3 setup instructions live inside the work region.
+m5_work_end's 3 setup instructions live inside the work region.
 - gem5's CPU/cache model parameters are set in your gem5 invocation,
-  not in this harness. To compare gem5 against a specific hardware
-  variant, configure gem5 to match that variant's `FLASH->ACR`.
+not in this harness. To compare gem5 against a specific hardware
+variant, configure gem5 to match that variant's `FLASH->ACR`.
 
 ## Layout
 
@@ -301,16 +322,46 @@ Verify `_bench_body_start = 08000480` for every variant.
 
 ### Variant matrix
 
-| Preset                       | PLATFORM   | BOARD          | HW_VARIANT  | ICACHE | DCACHE | PREFETCH |
-|------------------------------|------------|----------------|-------------|--------|--------|----------|
-| `gem5-stm32g474re`           | `gem5`     | `stm32g474re`  | —           | —      | —      | —        |
-| `hw-stm32g474re`             | `hardware` | `stm32g474re`  | `full`      | on     | on     | on       |
-| `hw-nocache-stm32g474re`     | `hardware` | `stm32g474re`  | `nocache`   | off    | off    | on       |
-| `hw-noprefetch-stm32g474re`  | `hardware` | `stm32g474re`  | `noprefetch`| on     | on     | off      |
-| `hw-none-stm32g474re`        | `hardware` | `stm32g474re`  | `none`      | off    | off    | off      |
+
+| Preset                      | PLATFORM   | BOARD         | HW_VARIANT   | ICACHE | DCACHE | PREFETCH |
+| --------------------------- | ---------- | ------------- | ------------ | ------ | ------ | -------- |
+| `gem5-stm32g474re`          | `gem5`     | `stm32g474re` | —            | —      | —      | —        |
+| `hw-stm32g474re`            | `hardware` | `stm32g474re` | `full`       | on     | on     | on       |
+| `hw-nocache-stm32g474re`    | `hardware` | `stm32g474re` | `nocache`    | off    | off    | on       |
+| `hw-noprefetch-stm32g474re` | `hardware` | `stm32g474re` | `noprefetch` | on     | on     | off      |
+| `hw-none-stm32g474re`       | `hardware` | `stm32g474re` | `none`       | off    | off    | off      |
+
 
 (All hardware variants run at PLL 170 MHz with FLASH LATENCY=4; gem5
 doesn't model RCC/FLASH so those columns don't apply.)
+
+### Measurement overhead per variant
+
+Empirically the harness reports
+
+```
+inner  =  slope · N  +  intercept
+```
+
+for an N-instruction warm-cache kernel. The slope is the effective
+fetch CPI under each variant's cache+prefetch policy; the intercept is
+the per-rep measurement framing (the `ldr/bl/…/bx/ldr` scaffolding
+around your kernel body). Measured 2026-05-12 on STM32G474RE:
+
+| Variant                     | slope (c/NOP) | intercept (framing, c) |
+|-----------------------------|--------------:|-----------------------:|
+| `hw-stm32g474re`            |         1.000 |                      6 |
+| `hw-noprefetch-stm32g474re` |         1.000 |                      7 |
+| `hw-nocache-stm32g474re`    |         1.250 |                     20 |
+| `hw-none-stm32g474re`       |         1.500 |                     17 |
+
+So to back out the **pure kernel cycles** from a measured `inner`
+on a given variant, subtract that variant's intercept.
+
+Full derivation, residuals, methodology, and reproduction steps:
+[`board/stm32g474re/measurement_overhead.md`](board/stm32g474re/measurement_overhead.md).
+Re-run the sweep with `python3 ./scripts/scaling_nop16_sweep.py` after
+any change to the BENCH macro, the clock, or the variant set.
 
 ### Post-link size check
 
@@ -463,13 +514,13 @@ How to capture them depends on your gem5 fork's configuration. Common
 setups:
 
 - Run with stat-dumping on work-begin / work-end transitions (your
-  fork's flag for this varies). Each rep appears in `m5out/stats.txt`
-  as its own `Begin … End Simulation Statistics` block; read
-  `system.cpu.numCycles` (or your fork's equivalent) inside each.
+fork's flag for this varies). Each rep appears in `m5out/stats.txt`
+as its own `Begin … End Simulation Statistics` block; read
+`system.cpu.numCycles` (or your fork's equivalent) inside each.
 - After the program exits via `m5_exit`, gem5 dumps a final stats
-  block. With `m5_work_begin` / `m5_work_end` as scope markers, gem5
-  may also report `system.cpu.workload.statistics::numCycles` keyed on
-  the work id.
+block. With `m5_work_begin` / `m5_work_end` as scope markers, gem5
+may also report `system.cpu.workload.statistics::numCycles` keyed on
+the work id.
 
 ```bash
 python3 ./scripts/parse_results.py m5out/stats.txt
@@ -530,20 +581,23 @@ Three examples, escalating in register usage:
 
 Expected: `inner = 100 (NOPs at CPI=1.0) + 6 (framing) = 106`.
 
-**b) 100 × `adds`** — caller-saved registers only, no push/pop:
+**b) 100 × `adds`** — free caller-saved registers only, no push/pop:
 
 ```asm
 #include "harness.h"
 
     BENCH
-        movs r0, #0                @ r0 is caller-saved — free to use
+        movs r1, #0                @ r1 is free on both platforms
         .rept 100
-        adds r0, r0, #1
+        adds r1, r1, #1
         .endr
     END_BENCH
 ```
 
 Expected: `inner ≈ 107` (1 movs + 100 adds + 6c framing).
+**Don't use r0 or r3** here — they hold harness state across each
+measured `bl` on hardware (see register contract below). r1, r2, r12
+are always safe.
 
 **c) Using callee-saved registers** — push/pop them yourself:
 
@@ -599,22 +653,43 @@ cycle count. Subtract 6 to get just your body's instruction cost.
   `-DALLOW_KERNEL_EXCEED_ICACHE=ON` if you intentionally want to
   measure a partially-cold-cache kernel.
 - **Flash-resident kernel data must fit in the board's D-cache**
-  (256 bytes on STM32G474RE). A kernel opts into the check by placing
-  its read-only data in a `.rodata.kernel_data` (or
-  `.rodata.kernel_data.*`) input section; the linker brackets that
-  region with `__kernel_data_start` / `__kernel_data_end` symbols and
-  the post-link guard compares `end - start` to `DCACHE_SIZE_BYTES`.
-  Override with `-DALLOW_KERNEL_EXCEED_DCACHE=ON`. Kernels that don't
-  declare a `.rodata.kernel_data` section have a zero-byte data
-  footprint and always pass.
-- **AAPCS register contract.** You're a callee:
-  - free to clobber: `r0–r3`, `r12` (caller-saved).
-  - must preserve: `r4–r11` (callee-saved) — push/pop if you use them.
-  - `lr`, `sp`: managed by the harness — don't touch.
+(256 bytes on STM32G474RE). A kernel opts into the check by placing
+its read-only data in a `.rodata.kernel_data` (or
+`.rodata.kernel_data.*`) input section; the linker brackets that
+region with `__kernel_data_start` / `__kernel_data_end` symbols and
+the post-link guard compares `end - start` to `DCACHE_SIZE_BYTES`.
+Override with `-DALLOW_KERNEL_EXCEED_DCACHE=ON`. Kernels that don't
+declare a `.rodata.kernel_data` section have a zero-byte data
+footprint and always pass.
+- **Register contract.** The harness keeps live state in specific
+registers across every measured `bl kernel_body`. The kernel must
+leave those unchanged on return (or push/pop them itself):
+
+  | Reg        | Hardware — what the harness keeps here           | gem5 — what the harness keeps here |
+  | ---------- | ------------------------------------------------ | ---------------------------------- |
+  | `r0`       | DWT_CYCCNT address (per-rep `ldr [r0]` snaps)    | reloaded around each bkpt — free   |
+  | `r1`, `r2` | not used across `bl` — free                      | not used across `bl` — free        |
+  | `r3`       | `&_inner_delta_cyc[]` (post-incremented per rep) | not used — free                    |
+  | `r4`       | start CYCCNT (read back for end − start)         | not used — free                    |
+  | `r5`       | remaining rep count                              | remaining rep count                |
+  | `r6`–`r11` | not used across `bl` — AAPCS callee-saved        | same                               |
+  | `r12`      | not used — free                                  | not used — free                    |
+  | `lr`, `sp` | harness-managed — don't touch                    | same                               |
+
+  Most of those are already AAPCS-callee-saved (r4–r11), so writing
+  AAPCS-compliant code automatically protects **r4** and **r5**. The
+  two registers that need EXTRA discipline beyond AAPCS — because
+  they're caller-saved but the harness still keeps live state in them
+  across the `bl` — are **r0** and **r3** on hardware.
+  Short rule: **on hardware, don't clobber r0, r3, r4, r5** across the
+  measured call. Free caller-saved scratch on both platforms: r1, r2,
+  r12 (plus r6–r11 with push/pop). For kernels that build on both
+  platforms from the same source, treat r0, r3, r4, r5 as
+  harness-reserved everywhere — strictest contract, works on both.
 - **Do NOT emit `bx lr` yourself.** `END_BENCH` emits it for you.
 - **No `.data` / `.bss` inside the macro.** If you need SRAM scratch,
-  declare it in a separate file and reference the symbol from your
-  kernel.
+declare it in a separate file and reference the symbol from your
+kernel.
 
 ### What if my body is bigger than the I-cache?
 
@@ -678,7 +753,7 @@ The two invariants:
    comparisons meaningful — same workload bytes execute on both
    targets.
 2. **bench_entry wrapper bytes** are identical across the **4 hardware
-   cache variants**. Wrapper bytes differ between hardware and gem5 by
+  cache variants**. Wrapper bytes differ between hardware and gem5 by
    design (different markers); they only need to be consistent within
    the hardware family so cross-variant comparisons see only the
    cache/prefetch difference.
@@ -688,26 +763,26 @@ See [test/README.md](test/README.md) for per-script details.
 ## Adding a new HW variant (same board, different cache settings)
 
 1. Drop a `configs/hardware-<name>.cmake` setting `ENABLE_ICACHE`,
-   `ENABLE_DCACHE`, `ENABLE_PREFETCH`, and `INNER_REPS`.
+  `ENABLE_DCACHE`, `ENABLE_PREFETCH`, and `INNER_REPS`.
 2. Add a matching preset to `CMakePresets.json` with
-   `"PLATFORM": "hardware"`, `"BOARD": "<board>"`, and
+  `"PLATFORM": "hardware"`, `"BOARD": "<board>"`, and
    `"HW_VARIANT": "<name>"`. The preset name convention is
    `hw-<variant>-<board>`.
 
 ## Adding a new board
 
 1. Create `board/<board>/` with:
-   - `board.cmake` defining `BOARD_LINKER_SCRIPT`,
-     `BOARD_OPENOCD_TARGET_CFG`, `BOARD_INCLUDE_DIR`,
-     `ICACHE_SIZE_BYTES`, `DCACHE_SIZE_BYTES`.
-   - The linker script (with the `__kernel_data_start` /
-     `__kernel_data_end` sentinels inside `.rodata` so the D-cache
-     check works).
-   - The board-specific openocd target cfg.
-   - Any board-specific headers (e.g. `dwt.h` if the board's debug
-     architecture differs).
+  - `board.cmake` defining `BOARD_LINKER_SCRIPT`,
+   `BOARD_OPENOCD_TARGET_CFG`, `BOARD_INCLUDE_DIR`,
+   `ICACHE_SIZE_BYTES`, `DCACHE_SIZE_BYTES`.
+  - The linker script (with the `__kernel_data_start` /
+  `__kernel_data_end` sentinels inside `.rodata` so the D-cache
+  check works).
+  - The board-specific openocd target cfg.
+  - Any board-specific headers (e.g. `dwt.h` if the board's debug
+  architecture differs).
 2. Add presets to `CMakePresets.json`: at minimum
-   `gem5-<board>` and `hw-<board>` (plus any cache variants).
+  `gem5-<board>` and `hw-<board>` (plus any cache variants).
 
 Build and run (substituting `<name>` for your new variant on the
 existing `stm32g474re` board):
@@ -716,3 +791,4 @@ existing `stm32g474re` board):
 cmake --preset hw-<name>-stm32g474re && cmake --build build/hw-<name>-stm32g474re -j4
 python3 ./test/test_board_run.py hw-<name>-stm32g474re
 ```
+

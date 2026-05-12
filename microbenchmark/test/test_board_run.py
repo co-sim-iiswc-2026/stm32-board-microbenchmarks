@@ -88,10 +88,36 @@ def main() -> int:
     print("    (target halts on completion; OpenOCD prints semihosting "
           "output as the kernel runs)")
 
+    # The probe config (stlink.cfg) is at the project root because the
+    # ST-Link probe is not board-specific; the target config (openocd.cfg)
+    # lives under board/<board>/. Derive <board> from the preset name —
+    # preset convention: `gem5-<board>` or `hw[-<variant>]-<board>`.
+    if preset.startswith("gem5-"):
+        board_name = preset[len("gem5-"):]
+    else:
+        # hw-<board> or hw-<variant>-<board>; assume the last "-" splits
+        # variant from board. With a single board today the simpler
+        # heuristic is also fine: strip the leading "hw-" and treat the
+        # rest as either "<variant>-<board>" or just "<board>".
+        rest = preset[len("hw-"):] if preset.startswith("hw-") else preset
+        # If there's a dash, the trailing component is the board; otherwise
+        # the entire rest is the board name.
+        if "-" in rest:
+            # Find the longest suffix that exists as a board/ directory.
+            # In practice today there's only stm32g474re, so this is just
+            # "everything after the last hyphen". Future boards may need a
+            # smarter heuristic (e.g. read BOARD from the CMake cache).
+            board_name = rest.rsplit("-", 1)[-1]
+            # Special-case: rsplit of "noprefetch-stm32g474re" gives
+            # "stm32g474re" already, which is right. But if a board name
+            # contains a hyphen we'd need to look it up properly.
+        else:
+            board_name = rest
+
     openocd_cmd = [
         "openocd",
         "-f", str(ROOT / "openocd" / "stlink.cfg"),
-        "-f", str(ROOT / "openocd" / "stm32g4x.cfg"),
+        "-f", str(ROOT / "board" / board_name / "openocd.cfg"),
         "-c", "init",
         "-c", "reset",
         "-c", "halt",

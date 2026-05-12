@@ -1,11 +1,14 @@
 /*
  * Minimal startup for STM32G474RE — vector table, Reset_Handler, .data
- * copy from flash, .bss zero, then jump to main().
+ * copy from flash, .bss zero, IRQ unmask, then jump to main().
  *
- * Only the core Cortex-M exceptions are populated. No NVIC vectors —
- * the harness never enables interrupts. The 0x08000000 vector table
- * is exactly 64 bytes (16 entries × 4 bytes) so .bench_kernel can be
- * pinned at 0x08000400 with plenty of slack.
+ * Only the core Cortex-M exceptions are populated. No NVIC peripheral
+ * vectors are wired up by the harness itself, but Reset_Handler
+ * explicitly unmasks IRQs (cpsie i) before calling main() so that any
+ * kernel or future feature enabling a specific NVIC source via
+ * NVIC->ISER will actually take interrupts. The 0x08000000 vector
+ * table is exactly 64 bytes (16 entries × 4 bytes) so .bench_kernel
+ * can be pinned at 0x08000400 with plenty of slack.
  *
  * Why C and not assembly: nothing in startup needs anything the
  * compiler can't generate. Keeping it in C means there's one less
@@ -76,6 +79,16 @@ void Reset_Handler(void)
     while (dst < &_ebss) {
         *dst++ = 0;
     }
+
+    /*
+     * Unmask IRQs at the CPU level. PRIMASK is already 0 at reset on
+     * Cortex-M, so this is a no-op on the normal boot path — but it
+     * guarantees we land in main() with interrupts unmasked even on
+     * re-entry from a stuck-handler state where PRIMASK might be set.
+     * Individual NVIC sources still need NVIC->ISER to fire; this only
+     * gates whether the CPU accepts any IRQ at all.
+     */
+    __asm__ volatile ("cpsie i" ::: "memory");
 
     main();
 

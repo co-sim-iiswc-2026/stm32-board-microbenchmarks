@@ -165,7 +165,25 @@ set(HARNESS_SOURCES
 # BENCH has both hardware (DWT_CYCCNT) and gem5 (m5_work_begin /
 # m5_work_end) implementations, so the same source builds for both
 # platforms.
-set(BENCHMARKS bench_nop16_100)
+set(BENCHMARKS
+    # Scaling-sweep kernels — sizes step by 8 NOPs so each datapoint
+    # covers an integer number of 64-bit FLITF flash fetches (4 × nop.n
+    # per fetch). Used by scripts/scaling_nop16_sweep.py to linear-fit
+    # per-NOP cost and harness framing.
+    bench_nop16_8
+    bench_nop16_16
+    bench_nop16_24
+    bench_nop16_32
+    bench_nop16_40
+    bench_nop16_48
+    bench_nop16_56
+    bench_nop16_64
+    bench_nop16_72
+    bench_nop16_80
+    # Canonical 100-NOP kernel — kept separately for default tests
+    # and README examples.
+    bench_nop16_100
+)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
