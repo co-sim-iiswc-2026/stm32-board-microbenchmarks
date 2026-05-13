@@ -167,17 +167,33 @@ def hash_body_region(elf: Path) -> str:
     return _objdump_bytes_only(elf, ".bench_kernel", start, end)
 
 
-def hash_kernel_body(elf: Path, length: int = 256) -> str:
-    """SHA-256 of `length` bytes starting at the `kernel_body` symbol.
+def hash_kernel_body(elf: Path) -> str:
+    """SHA-256 of exactly the `kernel_body` symbol's bytes.
 
     This is the user's actual kernel workload. It MUST be byte-identical
     across every build target (gem5 + all hardware cache variants),
     because that's what makes cross-target cycle-count comparisons
     meaningful.
+
+    Hashes the bytes in the linker's `.text.kernel_body` output section
+    (the harness's pinned slot at FLASH 0x08001000 on stm32g474re),
+    bounded by the `.size`-tagged length nm reports for the symbol.
+    Earlier versions of this function hashed a fixed 256-byte window
+    in `.text` — that was silently wrong after the linker pin landed
+    (kernel_body now lives in its OWN output section, NOT `.text`).
     """
-    syms = nm_symbols(elf)
-    start = int(syms["kernel_body"], 16)
-    return _objdump_bytes_only(elf, ".text", start, start + length)
+    import subprocess as _sp
+    res = _sp.check_output([ARM_NM, "-S", str(elf)], text=True)
+    for line in res.splitlines():
+        parts = line.split()
+        if len(parts) == 4 and parts[3] == "kernel_body":
+            start = int(parts[0], 16)
+            size = int(parts[1], 16)
+            return _objdump_bytes_only(
+                elf, ".text.kernel_body", start, start + size
+            )
+    fail(f"kernel_body symbol (with .size) not in {elf}")
+    return ""  # unreachable
 
 
 def ensure_build(preset: str, bench: str = DEFAULT_BENCH) -> Path:
