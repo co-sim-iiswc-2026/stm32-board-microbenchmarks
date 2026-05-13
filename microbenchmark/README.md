@@ -338,6 +338,33 @@ Verify `_bench_body_start = 08000480` for every variant.
 (All hardware variants run at PLL 170 MHz with FLASH LATENCY=4; gem5
 doesn't model RCC/FLASH so those columns don't apply.)
 
+**Flash access cost.** On STM32G4, `FLASH_ACR.LATENCY=N` means **N wait
+states**, i.e. **N+1 HCLK cycles per flash line fetch**. At 170 MHz with
+`LATENCY=4` that is **5 CPU cycles** for one 64-bit flash read.
+[`src/system_init.c`](src/system_init.c) programs `LATENCY=4` *before*
+raising the clock to 170 MHz; [`src/flash_config.c`](src/flash_config.c)
+then layers each variant's `ICACHE`/`DCACHE`/`PREFETCH` bits on top while
+preserving `LATENCY`. So 5 cycles is the *raw* per-line fetch cost on
+the bus — how much of it reaches the core depends on the variant:
+
+- **`hw-stm32g474re` (full)** — I-cache + prefetch both hide the
+  wait-state cost entirely on warm-cache sequential code; effective
+  per-instruction stall ≈ 0 (slope = 1.000 c/NOP).
+- **`hw-noprefetch-stm32g474re`** — I-cache still hides it after warmup;
+  same slope.
+- **`hw-nocache-stm32g474re`** — caches OFF, prefetch ON. The
+  prefetcher pipelines sequential 64-bit line fetches with execution,
+  but it can't quite keep up with the 2-bytes/cycle Thumb fetch rate,
+  leaving ≈ 0.25 cycles per NOP of unhidden wait-state latency (slope
+  = 1.250 c/NOP).
+- **`hw-none-stm32g474re`** — everything OFF. Each branch / non-linear
+  fetch pays the full 5-cycle penalty; effective slope = 1.500 c/NOP.
+
+These slopes are measured, not theoretical — see the *Measurement
+overhead per variant* table below and
+[`board/stm32g474re/measurement_overhead.md`](board/stm32g474re/measurement_overhead.md)
+for the derivation.
+
 ### Measurement overhead per variant
 
 Empirically the harness reports
