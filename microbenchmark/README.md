@@ -275,7 +275,10 @@ microbenchmark/
 │   ├── flash_config.c         # FLASH->ACR cache/prefetch bits per variant
 │   └── main.c                 # init → bench_entry() → semihosting print → exit
 ├── kernels/
-│   └── bench_nop16_100.S    # the only kernel — template for new ones
+│   └── alu/                  # categorized subdir; one dir per category (alu, branch, mem, …)
+│       ├── bench_nop16_8.S   # scaling-sweep NOP kernels (8..80, step 8)
+│       ├── ...
+│       └── bench_nop16_100.S # canonical 100 × nop.n template
 ├── openocd/
 │   ├── stlink.cfg
 │   └── stm32g4x.cfg
@@ -550,7 +553,13 @@ cycles of instructions, every rep reports `inner = N + 6` on hardware
 
 ### Step 1 — Write the kernel file
 
-Drop a new file under `kernels/`, named `kernels/bench_<your_name>.S`.
+Drop a new file under `kernels/<category>/`, named
+`kernels/<category>/bench_<your_name>.S`. The category is one of the
+existing subdirs (`alu`, …); create a new subdir for a new category
+(e.g. `kernels/branch/`). Register the `(category, bench)` pair in
+`CMakeLists.txt`'s `BENCHMARKS_BY_CATEGORY` list and in the experiment's
+`config/benchmarks.txt` so MAE attribution picks it up.
+
 Inside, write a single block of Thumb-2 assembly between the
 `BENCH` markers:
 
@@ -567,7 +576,7 @@ Inside, write a single block of Thumb-2 assembly between the
 
 Three examples, escalating in register usage:
 
-**a) 100 × `nop.n`** — the template (`kernels/bench_nop16_100.S`):
+**a) 100 × `nop.n`** — the template (`kernels/alu/bench_nop16_100.S`):
 
 ```asm
 #include "harness.h"

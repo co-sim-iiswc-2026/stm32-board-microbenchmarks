@@ -165,25 +165,45 @@ set(HARNESS_SOURCES
 # BENCH has both hardware (DWT_CYCCNT) and gem5 (m5_work_begin /
 # m5_work_end) implementations, so the same source builds for both
 # platforms.
-set(BENCHMARKS
+#
+# BENCHMARKS_BY_CATEGORY is a flat list of (category, bench) pairs.
+# Each kernel source lives at kernels/<category>/<bench>.S — the
+# category subdir is part of the path so downstream tooling
+# (experiments/.../config/benchmarks.txt, summary.csv MAE grouping)
+# can attribute results without re-classifying.
+set(BENCHMARKS_BY_CATEGORY
     # Scaling-sweep kernels — sizes step by 8 NOPs so each datapoint
     # covers an integer number of 64-bit FLITF flash fetches (4 × nop.n
     # per fetch). Used by scripts/scaling_nop16_sweep.py to linear-fit
     # per-NOP cost and harness framing.
-    bench_nop16_8
-    bench_nop16_16
-    bench_nop16_24
-    bench_nop16_32
-    bench_nop16_40
-    bench_nop16_48
-    bench_nop16_56
-    bench_nop16_64
-    bench_nop16_72
-    bench_nop16_80
+    alu  bench_nop16_8
+    alu  bench_nop16_16
+    alu  bench_nop16_24
+    alu  bench_nop16_32
+    alu  bench_nop16_40
+    alu  bench_nop16_48
+    alu  bench_nop16_56
+    alu  bench_nop16_64
+    alu  bench_nop16_72
+    alu  bench_nop16_80
     # Canonical 100-NOP kernel — kept separately for default tests
     # and README examples.
-    bench_nop16_100
+    alu  bench_nop16_100
+    # ADD-immediate scaling sweep — pairs add16 (narrow Thumb,
+    # adds.n) with add32 (wide Thumb-2, adds.w) at matched N so
+    # cross-bench deltas attribute purely to encoding width.
+    alu  bench_add16_8
+    alu  bench_add16_16
+    alu  bench_add16_24
+    alu  bench_add16_100
+    alu  bench_add32_8
+    alu  bench_add32_16
+    alu  bench_add32_24
+    alu  bench_add32_100
 )
+
+# Flat list rebuilt below for any consumers that just want bench names.
+set(BENCHMARKS "")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -210,10 +230,16 @@ if(ALLOW_KERNEL_EXCEED_DCACHE)
     list(APPEND _size_check_extra "--allow-exceed-dcache")
 endif()
 
-foreach(bench ${BENCHMARKS})
+list(LENGTH BENCHMARKS_BY_CATEGORY _bbc_n)
+math(EXPR _bbc_last "${_bbc_n} - 1")
+foreach(i RANGE 0 ${_bbc_last} 2)
+    list(GET BENCHMARKS_BY_CATEGORY ${i} bench_category)
+    math(EXPR _bbc_i1 "${i} + 1")
+    list(GET BENCHMARKS_BY_CATEGORY ${_bbc_i1} bench)
+    list(APPEND BENCHMARKS ${bench})
     set(elf_target "${bench}.elf")
     add_executable(${elf_target}
-        kernels/${bench}.S
+        kernels/${bench_category}/${bench}.S
         ${HARNESS_SOURCES}
     )
     target_compile_definitions(${elf_target} PRIVATE BENCH_NAME="${bench}")
