@@ -198,6 +198,50 @@ If your body uses `push {r4-r11}` / `pop {r4-r11}` to preserve
 callee-saved registers, add `1 + N` cycles per push/pop pair (one for
 the address generation + one per pushed register).
 
+### What the inner window actually captures — pipeline-entry to fetch-completion
+
+Empirically, the DWT snap pair brackets cycles from **the first kernel
+instruction entering the pipeline** to **the last kernel instruction
+finishing its fetch from flash** — not just up to "fetch issued" or
+"first instruction dispatched." Anything that gates the last
+instruction's fetch (a flash wait state, a partially-cached line) is
+inside the window.
+
+The cleanest demonstration is `bench_nop16_9` (an off-grid sweep point:
+9 × `nop.n`, one NOP past the 8-NOP / 2-line boundary). Adding one
+extra NOP shifts the body's last cache line from "holds only `bx lr`"
+to "holds `nop.n` + `bx lr`":
+
+| variant                       | N=8 inner | N=9 inner | Δ for the 9th NOP                                                                  |
+| ----------------------------- | --------: | --------: | ---------------------------------------------------------------------------------- |
+| `hw-stm32g474re` (warm cache) |        14 |        15 | **+1 cycle** — single-cycle execute, no fetch stall.                                 |
+| `hw-noprefetch-stm32g474re`   |        15 |        15 | 0 cycles in steady state (rep 0 = 19 — see caveat below).                            |
+| `hw-nocache-stm32g474re`      |        30 |        30 | 0 cycles — the prefetcher pipelines the new line behind the previous line's execute. |
+| `hw-none-stm32g474re`         |        29 |        34 | **+5 cycles** — one full 64-bit flash line fetch (LATENCY=4 → 5 HCLK) is inside the window. |
+
+The `hw-none` row is the smoking gun: no I-cache, no prefetcher, so the
+3rd flash line (containing the new NOP and `bx lr`) is fetched on
+demand. That fetch takes exactly 5 HCLK cycles, and all 5 cycles show
+up in `inner`. If the window stopped at "last fetch issued" we'd see
+~1 extra cycle, not 5.
+
+#### Caveat — partially-filled last cache line on cache-on variants
+
+For `bench_nop16_9` with caches **on**, rep 0 is 3-4 cycles slower
+than reps 1-9 (`inner=18` then `15..15` on `hw-stm32g474re`; `19` then
+`15..15` on `hw-noprefetch-stm32g474re`). The single warmup call doesn't
+fully prime the I-cache line that holds only one user-written nop
+(NOP 9 at `0x08001010` + `bx lr` at `0x08001012` — the rest of the
+8-byte line is unused). The first measured rep pays the line-fill cost.
+`bench_nop16_8` doesn't show this — its last cache line is fully
+consumed by the warmup. So when you need a clean steady-state number on
+an off-grid body size:
+
+- average reps 1..N-1 (drop rep 0), or
+- increase the warmup count, or
+- size the body so its last cache line is fully used (multiples of
+  4 × `nop.n` for STM32G4's 64-bit FLITF lines).
+
 ### Why the warmup matters
 
 A cold-flash call to a 100-NOP body costs ~127 cycles (CPI ≈ 1.25),

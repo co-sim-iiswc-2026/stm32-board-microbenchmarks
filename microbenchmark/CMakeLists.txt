@@ -177,6 +177,7 @@ set(BENCHMARKS_BY_CATEGORY
     # per fetch). Used by scripts/scaling_nop16_sweep.py to linear-fit
     # per-NOP cost and harness framing.
     alu  bench_nop16_8
+    alu  bench_nop16_9
     alu  bench_nop16_16
     alu  bench_nop16_24
     alu  bench_nop16_32
