@@ -1,0 +1,17 @@
+/*
+ * bench_vcmpe_100 — 100 × vcmpe.f32 Sd, Sm via BENCH harness.
+ *
+ * gem5 MFpCmpS, register form, with-exception (m_decoder.cc:1173). Writes FPSCR NZCV.
+ *
+ * One-shot setup (constant across all sizes — cancels in N=100 − N=8
+ * differencing) goes before .rept inside BENCH.
+ */
+#include "harness.h"
+
+    BENCH
+        vmov.f32 s0, #1.0
+        vmov.f32 s1, #2.0
+        .rept 100
+        vcmpe.f32 s0, s1
+        .endr
+    END_BENCH

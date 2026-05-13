@@ -201,6 +201,181 @@ set(BENCHMARKS_BY_CATEGORY
     alu  bench_add32_16
     alu  bench_add32_24
     alu  bench_add32_100
+
+    # FP ALU decoder-validation kernels — one mnemonic per gem5
+    # m_decoder.cc path (MFpBinS / MFpUnaryS / MFpTernaryS /
+    # MFpFusedMulAddS / MFpCmpS / MFpCvtS / MFpCvtFixedS / MFpMovImmS /
+    # MFpMovRegS / VFP↔core transfer). 4 sizes (8, 9, 16, 100) per
+    # mnemonic so per-op cost falls out of N=100 − N=8 differencing.
+    fp   bench_vadd_8
+    fp   bench_vadd_9
+    fp   bench_vadd_16
+    fp   bench_vadd_100
+    fp   bench_vsub_8
+    fp   bench_vsub_9
+    fp   bench_vsub_16
+    fp   bench_vsub_100
+    fp   bench_vmul_8
+    fp   bench_vmul_9
+    fp   bench_vmul_16
+    fp   bench_vmul_100
+    fp   bench_vnmul_8
+    fp   bench_vnmul_9
+    fp   bench_vnmul_16
+    fp   bench_vnmul_100
+    fp   bench_vmla_8
+    fp   bench_vmla_9
+    fp   bench_vmla_16
+    fp   bench_vmla_100
+    fp   bench_vmls_8
+    fp   bench_vmls_9
+    fp   bench_vmls_16
+    fp   bench_vmls_100
+    fp   bench_vnmla_8
+    fp   bench_vnmla_9
+    fp   bench_vnmla_16
+    fp   bench_vnmla_100
+    fp   bench_vnmls_8
+    fp   bench_vnmls_9
+    fp   bench_vnmls_16
+    fp   bench_vnmls_100
+    fp   bench_vfma_8
+    fp   bench_vfma_9
+    fp   bench_vfma_16
+    fp   bench_vfma_100
+    fp   bench_vfms_8
+    fp   bench_vfms_9
+    fp   bench_vfms_16
+    fp   bench_vfms_100
+    fp   bench_vfnma_8
+    fp   bench_vfnma_9
+    fp   bench_vfnma_16
+    fp   bench_vfnma_100
+    fp   bench_vfnms_8
+    fp   bench_vfnms_9
+    fp   bench_vfnms_16
+    fp   bench_vfnms_100
+    fp   bench_vdiv_8
+    fp   bench_vdiv_9
+    fp   bench_vdiv_16
+    fp   bench_vdiv_100
+    fp   bench_vsqrt_8
+    fp   bench_vsqrt_9
+    fp   bench_vsqrt_16
+    fp   bench_vsqrt_100
+    fp   bench_vabs_8
+    fp   bench_vabs_9
+    fp   bench_vabs_16
+    fp   bench_vabs_100
+    fp   bench_vneg_8
+    fp   bench_vneg_9
+    fp   bench_vneg_16
+    fp   bench_vneg_100
+    fp   bench_vmov_imm_8
+    fp   bench_vmov_imm_9
+    fp   bench_vmov_imm_16
+    fp   bench_vmov_imm_100
+    fp   bench_vmov_reg_8
+    fp   bench_vmov_reg_9
+    fp   bench_vmov_reg_16
+    fp   bench_vmov_reg_100
+    fp   bench_vmov_c2f_8
+    fp   bench_vmov_c2f_9
+    fp   bench_vmov_c2f_16
+    fp   bench_vmov_c2f_100
+    fp   bench_vmov_f2c_8
+    fp   bench_vmov_f2c_9
+    fp   bench_vmov_f2c_16
+    fp   bench_vmov_f2c_100
+    fp   bench_vcmp_8
+    fp   bench_vcmp_9
+    fp   bench_vcmp_16
+    fp   bench_vcmp_100
+    fp   bench_vcmpe_8
+    fp   bench_vcmpe_9
+    fp   bench_vcmpe_16
+    fp   bench_vcmpe_100
+    fp   bench_vcmp_zero_8
+    fp   bench_vcmp_zero_9
+    fp   bench_vcmp_zero_16
+    fp   bench_vcmp_zero_100
+    fp   bench_vcmpe_zero_8
+    fp   bench_vcmpe_zero_9
+    fp   bench_vcmpe_zero_16
+    fp   bench_vcmpe_zero_100
+    fp   bench_vcvt_f32_s32_8
+    fp   bench_vcvt_f32_s32_9
+    fp   bench_vcvt_f32_s32_16
+    fp   bench_vcvt_f32_s32_100
+    fp   bench_vcvt_f32_u32_8
+    fp   bench_vcvt_f32_u32_9
+    fp   bench_vcvt_f32_u32_16
+    fp   bench_vcvt_f32_u32_100
+    fp   bench_vcvt_s32_f32_8
+    fp   bench_vcvt_s32_f32_9
+    fp   bench_vcvt_s32_f32_16
+    fp   bench_vcvt_s32_f32_100
+    fp   bench_vcvt_u32_f32_8
+    fp   bench_vcvt_u32_f32_9
+    fp   bench_vcvt_u32_f32_16
+    fp   bench_vcvt_u32_f32_100
+    fp   bench_vcvt_f32_s16fx_8
+    fp   bench_vcvt_f32_s16fx_9
+    fp   bench_vcvt_f32_s16fx_16
+    fp   bench_vcvt_f32_s16fx_100
+    fp   bench_vcvt_f32_u16fx_8
+    fp   bench_vcvt_f32_u16fx_9
+    fp   bench_vcvt_f32_u16fx_16
+    fp   bench_vcvt_f32_u16fx_100
+    fp   bench_vcvt_s16_f32fx_8
+    fp   bench_vcvt_s16_f32fx_9
+    fp   bench_vcvt_s16_f32fx_16
+    fp   bench_vcvt_s16_f32fx_100
+    fp   bench_vcvt_u16_f32fx_8
+    fp   bench_vcvt_u16_f32fx_9
+    fp   bench_vcvt_u16_f32fx_16
+    fp   bench_vcvt_u16_f32fx_100
+
+    # Integer ALU decoder-validation kernels — SDIV/UDIV at three
+    # data-stratified latency points each (Cortex-M4 early termination,
+    # 2..12c per TRM errata), plus MUL/UMULL/LSL-by-reg for the other
+    # distinct decoder paths flagged in the plan.
+    alu  bench_sdiv_fast_8
+    alu  bench_sdiv_fast_9
+    alu  bench_sdiv_fast_16
+    alu  bench_sdiv_fast_100
+    alu  bench_sdiv_mid_8
+    alu  bench_sdiv_mid_9
+    alu  bench_sdiv_mid_16
+    alu  bench_sdiv_mid_100
+    alu  bench_sdiv_slow_8
+    alu  bench_sdiv_slow_9
+    alu  bench_sdiv_slow_16
+    alu  bench_sdiv_slow_100
+    alu  bench_udiv_fast_8
+    alu  bench_udiv_fast_9
+    alu  bench_udiv_fast_16
+    alu  bench_udiv_fast_100
+    alu  bench_udiv_mid_8
+    alu  bench_udiv_mid_9
+    alu  bench_udiv_mid_16
+    alu  bench_udiv_mid_100
+    alu  bench_udiv_slow_8
+    alu  bench_udiv_slow_9
+    alu  bench_udiv_slow_16
+    alu  bench_udiv_slow_100
+    alu  bench_mul_8
+    alu  bench_mul_9
+    alu  bench_mul_16
+    alu  bench_mul_100
+    alu  bench_umull_8
+    alu  bench_umull_9
+    alu  bench_umull_16
+    alu  bench_umull_100
+    alu  bench_lsl_reg_8
+    alu  bench_lsl_reg_9
+    alu  bench_lsl_reg_16
+    alu  bench_lsl_reg_100
 )
 
 # Flat list rebuilt below for any consumers that just want bench names.
